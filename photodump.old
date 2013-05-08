@@ -1,0 +1,34 @@
+/*
+photodump.js -- A Firebase-backed photo sharing app.
+By Alex Ose, alex@alexose.com
+*/
+
+$(document).ready(function(){
+    var photodump = new Photodump();
+});
+
+Photodump = function(){
+    this
+        .initEvents()
+}
+
+Photodump.prototype.initEvents = function(){
+    
+    // Dragover event listener
+    document.ondragover = function(evt, file){
+        evt.stopPropagation();
+        evt.preventDefault();
+        console.log(evt, file);
+    };
+    
+    // Drop event listener 
+    document.ondrop = function(evt, file){
+        evt.stopPropagation();
+        evt.preventDefault();
+        
+        var files = evt.dataTransfer.files;
+        for (var i = 0; i < files.length; i++) {
+            console.log(files[i].name);
+        }
+    };
+}
