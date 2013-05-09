@@ -4,9 +4,20 @@ By Alex Ose, alex@alexose.com
 */
 
 $(document).ready(function(){
+    var hash = window.location.hash;
+    hash = hash.substr(1,hash.length);
+    var first = false;
+    if (hash === ""){
+        // Generate a new hash based on current timestamp
+        // TODO: security
+        hash = window.location.hash = Math.random().toString(36).substr(2);
+        first = true;
+    }
+
     var options = {
         url  : 'https://photodump.firebaseio.com/',
-        hash : 'develop-1'
+        hash : hash,
+        first: first
     }
     var photodump = new Photodump(options);
     
@@ -15,11 +26,22 @@ $(document).ready(function(){
 Photodump = function(options){
     this.firebase = new Firebase(options.url + options.hash);
     this.reader = new FileReader();
+    this.options = options;
 
     this
+        .initMessages()
         .initControls()
         .initClientEvents()
         .initServerEvents()
+}
+
+Photodump.prototype.initMessages = function(){
+    if (this.options.first){
+        var message = $('<h1 />').html('You have created a new photodump.  <br />Drag a photo here to begin.');
+        $('#window').append(message);
+    }
+
+    return this;
 }
 
 Photodump.prototype.initControls = function(){
