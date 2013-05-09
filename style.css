@@ -41,4 +41,7 @@ li.thumb img{
     top: 101px; bottom: 0; left: 0; right: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    text-align: center;
+    color: #333;
+    text-shadow: 1px 1px 1px rgba(0,0,0,.3);
 }
