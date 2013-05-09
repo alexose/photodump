@@ -17,8 +17,15 @@ Photodump = function(options){
     this.reader = new FileReader();
 
     this
+        .initControls()
         .initClientEvents()
         .initServerEvents()
+}
+
+Photodump.prototype.initControls = function(){
+    // TODO: slideshow controls
+    
+    return this;
 }
 
 Photodump.prototype.initClientEvents = function(){
@@ -58,8 +65,10 @@ Photodump.prototype.initServerEvents = function(){
 
     this.firebase.on('child_added', function(snapshot){
         data = snapshot.val();
-        var li = new Photodump.Thumb(data);
-        $('#thumbs').append(li);
+        if (data.data){
+            var li = new Photodump.Thumb(data);
+            $('#thumbs').append(li);
+        }
     });
     
     return this;
@@ -68,7 +77,18 @@ Photodump.prototype.initServerEvents = function(){
 Photodump.Thumb = function(data, tag){
     tag = tag || 'li';
 
-    var img = $('<img />').attr('src', data.data).attr('alt', data.filename);
-    var element = $('<' + tag + '/>').addClass('thumb').append(img);
+    var img = $('<img />')
+        .attr('src', data.data)
+        .attr('alt', data.filename);
+    var element = $('<' + tag + '/>')
+        .addClass('thumb')
+        .click(clickHandler)
+        .append(img);
+    
     return element;
+
+    function clickHandler(evt){
+       var selector = '#window';
+       $(selector).empty().append(img.clone());
+    }
 }
