@@ -20,8 +20,8 @@ $(document).ready(function(){
         first: first,
         controls: [
             { name : 'prev', icon : 'backward' },
-            { name : 'play', icon : 'play' },
-            { name : 'next', icon : 'forward' },
+            { name : 'play', icon : 'play'     },
+            { name : 'next', icon : 'forward'  },
         ]
     }
     var photodump = new Photodump(options);
@@ -30,10 +30,12 @@ $(document).ready(function(){
 
 Photodump = function(options){
     this.firebase = new Firebase(options.url + options.hash);
-    this.reader = new FileReader();
-    this.options = options;
+    this.reader   = new FileReader();
+    this.options  = options;
     
-    this.stage = new Photodump.Stage('#window') 
+    this.bar    = $('#bar');
+    this.offset = this.bar.height();
+    this.stage  = new Photodump.Stage('#window') 
 
     this
         .initMessages()
@@ -69,18 +71,47 @@ Photodump.prototype.initControls = function(){
 
 Photodump.prototype.initClientEvents = function(){
     var self = this;
+    var div  = '<div />';
+    var icon = '<i />';
+
+    // Dragover icon for visual feedback
+    var size = '128px';
+    var dragover = $(div)
+        .addClass('dragover')
+        .css({
+            'position' : 'absolute',
+            'z-index': '1002',
+            'pointer-events': 'none',
+            'width' : size, 
+            'height': size,
+            'font-size': size
+        })
+        .append(
+            $(icon).addClass('icon-plus-sign')
+        )
+        .appendTo(
+            this.stage.el
+        )
 
     document.ondragover = function(evt, file){
         evt.stopPropagation();
         evt.preventDefault();
-
-        // TODO: visual drag feedback
+        dragover.show()
+            .css({
+                top  : evt.y - (parseInt(size, 10)/2) - self.offset,
+                left : evt.x - (parseInt(size, 10)/2)
+            });
     };
     
+    document.ondragout = function(evt, file){
+        // dragover.hide(); 
+    };
+
     // Drop event listener 
     document.ondrop = function(evt, file){
         evt.stopPropagation();
         evt.preventDefault();
+        dragover.hide(); 
         
         var files = evt.dataTransfer.files,
             reader = self.reader;
