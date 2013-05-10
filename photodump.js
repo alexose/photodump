@@ -17,7 +17,12 @@ $(document).ready(function(){
     var options = {
         url  : 'https://photodump.firebaseio.com/',
         hash : hash,
-        first: first
+        first: first,
+        controls: [
+            { name : 'prev', icon : 'backward' },
+            { name : 'play', icon : 'play' },
+            { name : 'next', icon : 'forward' },
+        ]
     }
     var photodump = new Photodump(options);
     
@@ -47,11 +52,17 @@ Photodump.prototype.initMessages = function(){
 }
 
 Photodump.prototype.initControls = function(){
-    var div = '<div />';
+    var div  = '<div />',
+        icon = '<i />'; 
 
-    var controls = ['prev', 'play', 'next'];
-    controls.forEach(function(d){
-        $(div).addClass(d).click($.proxy(this[d], this)).appendTo('#controls');
+    this.options.controls.forEach(function(d){
+        $(div)
+            .addClass(d.name)
+            .click($.proxy(this[d], this))
+            .appendTo('#controls')
+            .append(
+                $(icon).addClass('icon-' + d.icon)
+            )
     });
     return this;
 }

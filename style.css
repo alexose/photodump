@@ -45,3 +45,20 @@ li.thumb img{
     color: #333;
     text-shadow: 1px 1px 1px rgba(0,0,0,.3);
 }
+
+#controls {
+    position: absolute;
+    z-index: 1001;
+    bottom: 0; left: 0; right: 0;
+    text-align: center;
+    font-size: 64px;
+}
+
+#controls div {
+    display: inline-block;
+    margin: 20px;
+    width: 64px;
+    height: 64px;
+    color: rgba(255,255,255,0.1);
+    cursor: pointer;
+}
