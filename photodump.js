@@ -8,7 +8,7 @@ $(document).ready(function(){
     hash = hash.substr(1,hash.length);
     var first = false;
     if (hash === ""){
-        // Generate a new hash based on current timestamp
+        // Generate a new hash
         // TODO: security
         hash = window.location.hash = Math.random().toString(36).substr(2);
         first = true;
@@ -144,19 +144,30 @@ Photodump.Stage = function(selector){
 }
 
 Photodump.Stage.prototype.show = function(id){
-    var img = this.current = $('#' + id).clone();
-    this.el.empty().append(img);
+    id = id.substr(0,1) === "#" ? id : '#' + id;
+
+    var img = this.current = $(id);
+    this.el.empty().append(img.clone());
     return this;
 }
 
 Photodump.Stage.prototype.prev = function(){
+    this.change('prev');
+}
 
+Photodump.Stage.prototype.next = function(direction){
+    this.change('next');
+}
+
+Photodump.Stage.prototype.change = function(direction){
+    var img = this.current[direction]();
+    if (img.prop('tagname') === 'img'){
+        this.show(img.attr('id'));
+    }
+    return this;
 }
 
 Photodump.Stage.prototype.play = function(){
 
 }
 
-Photodump.Stage.prototype.next = function(){
-
-}
