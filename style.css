@@ -51,6 +51,11 @@ li.thumb img{
     text-shadow: 1px 1px 1px rgba(0,0,0,.3);
 }
 
+#window img{
+    max-height: 100%;
+    max-width: 100%;
+}
+
 #controls {
     position: absolute;
     z-index: 1001;
