@@ -23,11 +23,14 @@ li.thumb{
     margin: 0px 3px;
 }
 
+li.thumb img.active{
+    background-color:#333;
+}
+
 li.thumb img{
     max-height: 100%;
     max-width: 100%;
     padding: 5px;
-    background-color: #333;
 }
 
 #bar {

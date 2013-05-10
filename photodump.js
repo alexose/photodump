@@ -39,15 +39,19 @@ Photodump = function(options){
 
     this
         .initMessages()
-        .initControls()
         .initClientEvents()
-        .initServerEvents()
+        .initServerEvents();
 }
 
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
-        var message = $('<h1 />').html('You have created a new photodump.  <br />Drag a photo here to begin.');
-        $('#window').append(message);
+        var message = $('<h1 />')
+            .html('You have created a new photodump.  <br />Drag a photo here to begin.')
+            .css({
+                'position' : 'absolute',
+                'left' : 0, 'right': 0, 'top': 0
+            });
+        this.stage.frame.append(message);
     }
 
     return this;
@@ -55,12 +59,18 @@ Photodump.prototype.initMessages = function(){
 
 Photodump.prototype.initControls = function(){
     var div  = '<div />',
-        icon = '<i />'; 
+        icon = '<i />',
+        self = this;
+
+    this.controls = true;
 
     this.options.controls.forEach(function(d){
         $(div)
             .addClass(d.name)
-            .click($.proxy(this[d], this))
+            .click($.proxy(function(evt){ 
+                self.stage[d.name]() 
+            }, self))
+            .mousedown(function(){ return false; }) // Prevent selection on double click
             .appendTo('#controls')
             .append(
                 $(icon).addClass('icon-' + d.icon)
@@ -149,6 +159,10 @@ Photodump.prototype.initServerEvents = function(){
             var li = new Photodump.Thumb(data, self.stage);
             $('#thumbs').append(li);
         }
+        
+        if (!self.controls){
+            self.initControls();
+        }
     });
     
     return this;
@@ -161,7 +175,7 @@ Photodump.prototype.refToId = function(ref){
 Photodump.Thumb = function(data, stage){
     var self = this;
     this.id = 'image-' + data.id;
-    
+
     var tag = 'li';
 
     var img = $('<img />')
@@ -170,27 +184,35 @@ Photodump.Thumb = function(data, stage){
         .attr('alt', data.filename);
     var element = $('<' + tag + '/>')
         .addClass('thumb')
-        .click(clickHandler)
+        .click($.proxy(clickHandler, this))
         .append(img);
     
     return element;
 
     function clickHandler(evt){
-        stage.show(self.id);
+        stage.show(this.id);
     }
 }
 
 Photodump.Stage = function(selector){
     this.el = $(selector);
     this.current = null;
+    this.frame = $('<div />')
+        .width('100%').height('100%')
+        .appendTo(this.el);
+
     return this;
 }
 
 Photodump.Stage.prototype.show = function(id){
     id = id.substr(0,1) === "#" ? id : '#' + id;
+    if (this.current)
+        this.current.removeClass('active');
 
     var img = this.current = $(id);
-    this.el.empty().append(img.clone());
+    img.addClass('active');
+
+    this.frame.empty().append(img.clone());
     return this;
 }
 
@@ -203,14 +225,17 @@ Photodump.Stage.prototype.next = function(direction){
 }
 
 Photodump.Stage.prototype.change = function(direction){
-    var img = this.current[direction]();
-    if (img.prop('tagname') === 'img'){
+    if (!this.current) return this;
+    var img = this.current.parent()[direction]().find('img');
+    
+    if (img.length === 0) return this;
+    if (img.prop('tagName').toLowerCase() === 'img'){
         this.show(img.attr('id'));
     }
     return this;
 }
 
 Photodump.Stage.prototype.play = function(){
-
+    
 }
 
