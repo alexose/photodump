@@ -84,7 +84,8 @@ Photodump.prototype.initClientEvents = function(){
             'pointer-events': 'none',
             'width' : size, 
             'height': size,
-            'font-size': size
+            'font-size': size,
+            'display': 'none'
         })
         .append(
             $(icon).addClass('icon-plus-sign')
