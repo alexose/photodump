@@ -9,6 +9,7 @@ body {
 ul {
     margin: 0; padding: 0;
     list-style: none;
+    width: 9999%;
 }
 
 li {
@@ -24,7 +25,7 @@ li.thumb{
 }
 
 li.thumb img.active{
-    background-color:#333;
+    background-color:#444;
 }
 
 li.thumb img{
@@ -43,11 +44,11 @@ li.thumb img{
 
 #window {
     position: absolute;
-    top: 101px; bottom: 0; left: 0; right: 0;
+    top: 122px; bottom: 0; left: 0; right: 0;
     overflow-x: hidden;
     overflow-y: auto;
     text-align: center;
-    color: #333;
+    color: #444;
     text-shadow: 1px 1px 1px rgba(0,0,0,.3);
 }
 
