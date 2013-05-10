@@ -185,7 +185,9 @@ Photodump.Thumb = function(data, stage){
     var element = $('<' + tag + '/>')
         .addClass('thumb')
         .click($.proxy(clickHandler, this))
-        .append(img);
+        .hide()
+        .append(img)
+        .fadeIn();
     
     return element;
 
