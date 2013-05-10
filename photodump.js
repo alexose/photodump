@@ -162,6 +162,7 @@ Photodump.prototype.initServerEvents = function(){
         
         if (!self.controls){
             self.initControls();
+            self.stage.show('image-' + data.id);
         }
     });
     
