@@ -27,6 +27,8 @@ Photodump = function(options){
     this.firebase = new Firebase(options.url + options.hash);
     this.reader = new FileReader();
     this.options = options;
+    
+    this.stage = new Photodump.Stage('#window') 
 
     this
         .initMessages()
@@ -45,8 +47,12 @@ Photodump.prototype.initMessages = function(){
 }
 
 Photodump.prototype.initControls = function(){
-    // TODO: slideshow controls
-    
+    var div = '<div />';
+
+    var controls = ['prev', 'play', 'next'];
+    controls.forEach(function(d){
+        $(div).addClass(d).click($.proxy(this[d], this)).appendTo('#controls');
+    });
     return this;
 }
 
@@ -73,7 +79,13 @@ Photodump.prototype.initClientEvents = function(){
             
             reader.onload = function(theFile){
                 var payload =  theFile.target.result;
-                self.firebase.push({filename : file.name, data : payload });
+                var response = self.firebase.push({filename : file.name, data : payload });
+                if (response.toString){
+                    var id = response.toString().split('/').pop();
+                } else {
+                    // TODO: Display error
+
+                }
             };
             self.reader.readAsDataURL(file);
         }
@@ -86,9 +98,12 @@ Photodump.prototype.initServerEvents = function(){
     var self = this;
 
     this.firebase.on('child_added', function(snapshot){
-        data = snapshot.val();
+        var data = snapshot.val();
+
+        // Piggyback off of firebase's unique-ish IDs 
+        data.id = self.refToId(snapshot.ref());
         if (data.data){
-            var li = new Photodump.Thumb(data);
+            var li = new Photodump.Thumb(data, self.stage);
             $('#thumbs').append(li);
         }
     });
@@ -96,10 +111,18 @@ Photodump.prototype.initServerEvents = function(){
     return this;
 }
 
-Photodump.Thumb = function(data, tag){
-    tag = tag || 'li';
+Photodump.prototype.refToId = function(ref){
+    return ref.toString().split('/').pop();
+}
+
+Photodump.Thumb = function(data, stage){
+    var self = this;
+    this.id = 'image-' + data.id;
+    
+    var tag = 'li';
 
     var img = $('<img />')
+        .attr('id', this.id)
         .attr('src', data.data)
         .attr('alt', data.filename);
     var element = $('<' + tag + '/>')
@@ -110,7 +133,30 @@ Photodump.Thumb = function(data, tag){
     return element;
 
     function clickHandler(evt){
-       var selector = '#window';
-       $(selector).empty().append(img.clone());
+        stage.show(self.id);
     }
+}
+
+Photodump.Stage = function(selector){
+    this.el = $(selector);
+    this.current = null;
+    return this;
+}
+
+Photodump.Stage.prototype.show = function(id){
+    var img = this.current = $('#' + id).clone();
+    this.el.empty().append(img);
+    return this;
+}
+
+Photodump.Stage.prototype.prev = function(){
+
+}
+
+Photodump.Stage.prototype.play = function(){
+
+}
+
+Photodump.Stage.prototype.next = function(){
+
 }
