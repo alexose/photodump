@@ -30,7 +30,6 @@ $(document).ready(function(){
 
 Photodump = function(options){
     this.firebase = new Firebase(options.url + options.hash);
-    this.reader   = new FileReader();
     this.options  = options;
     
     this.bar    = $('#bar');
@@ -124,11 +123,11 @@ Photodump.prototype.initClientEvents = function(){
         evt.preventDefault();
         dragover.hide(); 
         
-        var files = evt.dataTransfer.files,
-            reader = self.reader;
+        var files = evt.dataTransfer.files;
 
         for (var i = 0; i < files.length; i++) {
-            var file = files[i];
+            var reader = new FileReader(),
+                file = files[i];
             
             reader.onload = function(theFile){
                 var payload =  theFile.target.result;
@@ -140,7 +139,7 @@ Photodump.prototype.initClientEvents = function(){
 
                 }
             };
-            self.reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
         }
     };
 
