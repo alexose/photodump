@@ -9,7 +9,8 @@ body {
 ul {
     margin: 0; padding: 0;
     list-style: none;
-    width: 9999%;
+    width: 100%;
+    overflow: hidden; /* http://stackoverflow.com/questions/12783064/ */
 }
 
 li {
@@ -21,7 +22,7 @@ li.thumb{
     text-align: center;
     height: 90px;
     width:  140px;
-    margin: 0px 3px;
+    margin: 10px 5px;
 }
 
 li.thumb img.active{
@@ -36,10 +37,12 @@ li.thumb img{
 
 #bar {
     position: absolute;
+    z-index: 1000;
     top: 0; left: 0; right: 0;
     height: 120px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    background: #111;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #window {
@@ -52,9 +55,12 @@ li.thumb img{
     text-shadow: 1px 1px 1px rgba(0,0,0,.3);
 }
 
-#window img{
-    max-height: 100%;
-    max-width: 100%;
+#window.contain {
+    background: no-repeat center center fixed; 
+    -webkit-background-size: contain;
+    -moz-background-size: contain;
+    -o-background-size: contain;
+    background-size: contain;
 }
 
 #controls {
@@ -72,4 +78,8 @@ li.thumb img{
     height: 64px;
     color: rgba(255,255,255,0.1);
     cursor: pointer;
+}
+
+#controls div .active {
+    color: rgba(255,255,255,0.3);
 }

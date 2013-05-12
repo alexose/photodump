@@ -22,6 +22,8 @@ $(document).ready(function(){
             { name : 'prev', icon : 'backward' },
             { name : 'play', icon : 'play'     },
             { name : 'next', icon : 'forward'  },
+            { name : 'find', icon : 'th', toggle : ['full'] },
+            { name : 'full', icon : 'fullscreen', toggle : ['find'] }
         ]
     }
     var photodump = new Photodump(options);
@@ -34,7 +36,7 @@ Photodump = function(options){
     
     this.bar    = $('#bar');
     this.offset = this.bar.height();
-    this.stage  = new Photodump.Stage('#window') 
+    this.stage  = new Photodump.Stage('#window', this.bar) 
 
     this
         .initMessages()
@@ -67,7 +69,9 @@ Photodump.prototype.initControls = function(){
         $(div)
             .addClass(d.name)
             .click($.proxy(function(evt){ 
-                self.stage[d.name]() 
+                var ele = $(evt.target);
+                self.stage.elements[d.name] = ele;
+                self.stage[d.name](d.name, d.toggle); 
             }, self))
             .mousedown(function(){ return false; }) // Prevent selection on double click
             .appendTo('#controls')
@@ -196,12 +200,12 @@ Photodump.Thumb = function(data, stage){
     }
 }
 
-Photodump.Stage = function(selector){
-    this.el = $(selector);
+Photodump.Stage = function(selector, bar){
+    this.el = $(selector).addClass('contain');
     this.current = null;
-    this.frame = $('<div />')
-        .width('100%').height('100%')
-        .appendTo(this.el);
+    this.bar = bar;
+    this.barHeight = bar.height();
+    this.elements = {};
 
     return this;
 }
@@ -212,9 +216,12 @@ Photodump.Stage.prototype.show = function(id){
         this.current.removeClass('active');
 
     var img = this.current = $(id);
+
     img.addClass('active');
 
-    this.frame.empty().append(img.clone());
+    this.el.css({
+        'background-image' : 'url(' + img.attr('src') + ')' 
+    });
     return this;
 }
 
@@ -222,8 +229,40 @@ Photodump.Stage.prototype.prev = function(){
     this.change('prev');
 }
 
-Photodump.Stage.prototype.next = function(direction){
+Photodump.Stage.prototype.next = function(){
     this.change('next');
+}
+
+Photodump.Stage.prototype.find = function(name, toggle){
+    var ele = this.elements[name],
+        self = this;
+    
+    toggle.forEach(function(d){
+        if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
+    });
+
+    if (ele.hasClass('active')){
+        this.bar.animate({ 'height' : this.barHeight });
+    } else {
+        this.bar.animate({ 'height' : this.bar.find('ul').height() });
+    }
+    ele.toggleClass('active');
+}
+
+Photodump.Stage.prototype.full = function(name, toggle){
+    var ele = this.elements[name],
+        self = this;
+    
+    toggle.forEach(function(d){
+        if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
+    });
+    
+    if (ele.hasClass('active')){
+        this.bar.animate({ 'height' : this.barHeight });
+    } else {
+        this.bar.animate({ 'height' : 0 });
+    }
+    ele.toggleClass('active');
 }
 
 Photodump.Stage.prototype.change = function(direction){
