@@ -182,26 +182,43 @@ Photodump.prototype.refToId = function(ref){
 
 Photodump.Thumb = function(data, stage){
     var self = this;
+    this.li = $('<li />').addClass('thumb');
     this.id = 'image-' + data.id;
+    this.dataURI = data.data;
+    this.makeThumb(data.data, function(thumbURI){
+        self.thumbURI = thumbURI;
+        var img = $('<img />')
+            .attr('id', self.id)
+            .attr('src', thumbURI)
+            .attr('alt', data.filename)
+            .hide()
+            .appendTo(self.li)
+            .fadeIn();
+        
+        function clickHandler(evt){
+            stage.show(self.id);
+        }
+    });
 
-    var tag = 'li';
+    return this.li;
+}
 
-    var img = $('<img />')
-        .attr('id', this.id)
-        .attr('src', data.data)
-        .attr('alt', data.filename);
-    var element = $('<' + tag + '/>')
-        .addClass('thumb')
-        .click($.proxy(clickHandler, this))
-        .hide()
-        .append(img)
-        .fadeIn();
+// Resize an image's dataURI using canvas and provide the result via callback
+// via http://stackoverflow.com/questions/2516117
+Photodump.Thumb.prototype.makeThumb = function(datauri, callback){
+    var img = new Image(),
+        width = 120,
+        height = 80;
     
-    return element;
-
-    function clickHandler(evt){
-        stage.show(this.id);
+    img.onload = function() {
+        var canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL());
     }
+
+    img.src = datauri;
 }
 
 Photodump.Stage = function(selector, bar){
