@@ -46,13 +46,13 @@ Photodump = function(options){
 
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
-        var message = $('<h1 />')
+        this.welcome = $('<h1 />')
             .html('You have created a new photodump.  <br />Drag a photo here to begin.')
             .css({
                 'position' : 'absolute',
-                'left' : 0, 'right': 0, 'top': 0
+                'top' : '130px', 'left' : 0, 'right': 0
             });
-        this.stage.frame.append(message);
+        this.stage.el.append(this.welcome);
     }
 
     return this;
@@ -167,6 +167,10 @@ Photodump.prototype.initServerEvents = function(){
             self.initControls();
             self.stage.show('image-' + data.id);
         }
+        if (self.welcome){
+            self.welcome.remove();
+            delete self.welcome;
+        }
     });
     
     return this;
@@ -242,9 +246,9 @@ Photodump.Stage.prototype.find = function(name, toggle){
     });
 
     if (ele.hasClass('active')){
-        this.bar.animate({ 'height' : this.barHeight });
+        this.bar.stop().animate({ 'height' : this.barHeight });
     } else {
-        this.bar.animate({ 'height' : this.bar.find('ul').height() });
+        this.bar.stop().animate({ 'height' : this.bar.find('ul').height() });
     }
     ele.toggleClass('active');
 }
@@ -258,9 +262,9 @@ Photodump.Stage.prototype.full = function(name, toggle){
     });
     
     if (ele.hasClass('active')){
-        this.bar.animate({ 'height' : this.barHeight });
+        this.bar.stop().animate({ 'height' : this.barHeight });
     } else {
-        this.bar.animate({ 'height' : 0 });
+        this.bar.stop().animate({ 'height' : 0 });
     }
     ele.toggleClass('active');
 }
