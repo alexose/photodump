@@ -37,7 +37,8 @@ Photodump = function(options){
     this.bar    = $('#bar');
     this.offset = this.bar.height();
     this.stage  = new Photodump.Stage('#window', this.bar) 
-
+    this.thumbs = {}
+    
     this
         .initMessages()
         .initClientEvents()
@@ -134,14 +135,32 @@ Photodump.prototype.initClientEvents = function(){
                 file = files[i];
             
             reader.onload = function(theFile){
-                var payload =  theFile.target.result;
-                var response = self.firebase.push({filename : file.name, data : payload });
+                
+                // First, create thumbnail and push that to firebase.
+                var dataURI =  theFile.target.result,
+                    data = {
+                        filename : file.name, 
+                        dataURI  : dataURI 
+                    },
+                    thumb = new Photodump.Thumb(data),
+                    response = self.firebase.push(data);
+                
                 if (response.toString){
-                    var id = response.toString().split('/').pop();
+                    thumb.id = response.toString().split('/').pop();
+
+                    
+                    // Second, queue the full image for upload
+                    // TODO: resize this one also
+                    response.update({ 
+                        dataURI  : dataURI
+                    }, function(){
+                       console.log('full image complete!');
+                    });
                 } else {
                     // TODO: Display error
-
                 }
+
+
             };
             reader.readAsDataURL(file);
         }
@@ -158,21 +177,25 @@ Photodump.prototype.initServerEvents = function(){
 
         // Piggyback off of firebase's unique-ish IDs 
         data.id = self.refToId(snapshot.ref());
-        if (data.data){
-            var li = new Photodump.Thumb(data, self.stage);
-            $('#thumbs').append(li);
+        console.log(data);
+        if (data.thumbURI && !data.dataURI){
+
+            // Only a thumb is available at this point
+            var thumb = new Photodump.Thumb(data, self.stage);
+            $('#thumbs').append(thumb.li);
+        } else if (data.dataURI){
+            
+            // A full image is available
+
+        } else {
+            // Something went wrong
         }
         
-        if (!self.controls){
-            self.initControls();
-            self.stage.show('image-' + data.id);
-        }
         if (self.welcome){
             self.welcome.remove();
             delete self.welcome;
         }
     });
-    
     return this;
 }
 
@@ -183,24 +206,27 @@ Photodump.prototype.refToId = function(ref){
 Photodump.Thumb = function(data, stage){
     var self = this;
     this.li = $('<li />').addClass('thumb');
-    this.id = 'image-' + data.id;
-    this.dataURI = data.data;
-    this.makeThumb(data.data, function(thumbURI){
-        self.thumbURI = thumbURI;
-        var img = $('<img />')
-            .attr('id', self.id)
-            .attr('src', thumbURI)
-            .attr('alt', data.filename)
-            .hide()
-            .appendTo(self.li)
-            .fadeIn();
-        
-        function clickHandler(evt){
-            stage.show(self.id);
-        }
-    });
+    this.id = null; 
+    this.dataURI = data.dataURI;
 
-    return this.li;
+    if (this.dataURI){
+        this.makeThumb(data.dataURI, function(thumbURI){
+            self.thumbURI = thumbURI;
+            var img = $('<img />')
+                .attr('id', self.id)
+                .attr('src', thumbURI)
+                .attr('alt', data.filename)
+                .hide()
+                .appendTo(self.li)
+                .fadeIn();
+            
+            function clickHandler(evt){
+                stage.show(self.id);
+            }
+        });
+    }
+
+    return this;
 }
 
 // Resize an image's dataURI using canvas and provide the result via callback
