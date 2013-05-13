@@ -139,10 +139,9 @@ Photodump.prototype.initClientEvents = function(){
                 self.makeThumb(dataURI, function(thumbURI){
                     var data = {
                         filename : file.name, 
-                        dataURI  : dataURI, 
                         thumbURI : thumbURI 
                     };
-                    new Photodump.Thumb(data, self);
+                    self.firebase.push(data);
                 });
             };
             reader.readAsDataURL(file);
@@ -160,13 +159,10 @@ Photodump.prototype.initServerEvents = function(){
 
         // Piggyback off of firebase's unique-ish IDs 
         data.id = self.refToId(snapshot.ref());
-        console.log(data);
-        if (data.thumbURI && !data.dataURI){
-
-            // Only a thumb is available at this point
-            var thumb = new Photodump.Thumb(data, self.stage);
-            $('#thumbs').append(thumb.li);
-        } else if (data.dataURI){
+        var hash = self.hash(data.filename);
+        if (!data.imageURI){
+            self.thumbs[hash] = new Photodump.Thumb(data, self);
+        } else if (data.imageURI){
             
             // A full image is available
 
@@ -195,25 +191,12 @@ Photodump.prototype.refToId = function(ref){
 Photodump.Thumb = function(data, dump){
     this.data = data;
     this.dump = dump;
-    
-    this.li = $('<li />').addClass('thumb').appendTo(dump.bar);
+   
     this.id = dump.hash(data.filename);
-    this.firebaseId = data.firebaseId;
-
-    if (!this.firebaseId){
-        this.save();
-    }
+    this.li = $('<li />').addClass('thumb').appendTo(dump.bar);
     
     this.append();
-}
-
-Photodump.Thumb.prototype.save = function(callback){
-    var response = this.dump.firebase.push(this.data, $.proxy(callback, this)),
-        self = this;
-   
-    if (response.toString){
-        self.data.firebaseId = response.toString().split('/').pop();
-    };
+    return this;
 }
 
 Photodump.Thumb.prototype.append = function(){
