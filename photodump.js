@@ -156,6 +156,10 @@ Photodump.prototype.initServerEvents = function(){
 
     this.firebase.on('child_added', function(snapshot){
         var data = snapshot.val();
+        
+        if ($.isEmptyObject(self.thumbs)){
+            self.initControls();
+        }
 
         // Piggyback off of firebase's unique-ish IDs 
         data.id = self.refToId(snapshot.ref());
@@ -193,7 +197,7 @@ Photodump.Thumb = function(data, dump){
     this.dump = dump;
    
     this.id = dump.hash(data.filename);
-    this.li = $('<li />').addClass('thumb').appendTo(dump.bar);
+    this.li = $('<li />').addClass('thumb').appendTo(dump.bar.find('ul'));
     
     this.append();
     return this;
@@ -222,8 +226,8 @@ Photodump.Thumb.prototype.append = function(){
 // via http://stackoverflow.com/questions/2516117
 Photodump.prototype.makeThumb = function(datauri, callback){
     var img = new Image(),
-        width = 120,
-        height = 80;
+        height = 90
+        width = 140;
     
     img.onload = function() {
         var canvas = document.createElement("canvas");
