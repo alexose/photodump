@@ -36,8 +36,10 @@ Photodump = function(options){
     
     this.bar    = $('#bar');
     this.offset = this.bar.height();
-    this.stage  = new Photodump.Stage('#window', this.bar) 
-    this.thumbs = {}
+    this.stage  = new Photodump.Stage('#window', this.bar, this) 
+    this.thumbs = {};
+    this.images = {};
+    this.data   = {};
     
     this
         .initMessages()
@@ -113,7 +115,7 @@ Photodump.prototype.initClientEvents = function(){
         evt.preventDefault();
         dragover.show()
             .css({
-                top  : evt.y - (parseInt(size, 10)/2) - self.offset,
+                top  : evt.y - (parseInt(size, 10)/2),
                 left : evt.x - (parseInt(size, 10)/2)
             });
     };
@@ -135,14 +137,19 @@ Photodump.prototype.initClientEvents = function(){
                 file = files[i];
             
             reader.onload = function(theFile){
-                var dataURI = theFile.target.result;
+                var dataURI = theFile.target.result,
+                    hash = self.hash(file.name);
+
+                self.data[hash] = dataURI;
                 self.makeThumb(dataURI, function(thumbURI){
                     var data = {
                         filename : file.name, 
-                        thumbURI : thumbURI 
+                        thumbURI : thumbURI,
+                        hash     : hash
                     };
                     self.firebase.push(data);
                 });
+                
             };
             reader.readAsDataURL(file);
         }
@@ -161,19 +168,9 @@ Photodump.prototype.initServerEvents = function(){
             self.initControls();
         }
 
-        // Piggyback off of firebase's unique-ish IDs 
-        data.id = self.refToId(snapshot.ref());
-        var hash = self.hash(data.filename);
-        if (!data.imageURI){
-            self.thumbs[hash] = new Photodump.Thumb(data, self);
-        } else if (data.imageURI){
-            
-            // A full image is available
+        new Photodump.Thumb(data, self);
+        new Photodump.Image(data, self);
 
-        } else {
-            // Something went wrong
-        }
-        
         if (self.welcome){
             self.welcome.remove();
             delete self.welcome;
@@ -192,11 +189,25 @@ Photodump.prototype.refToId = function(ref){
     return ref.toString().split('/').pop();
 }
 
+Photodump.Image = function(data, dump){
+    this.data = data;
+    this.dump = dump;
+
+    // Try to procure the image data
+    this.uri  = dump.data[data.hash];
+
+    dump.images[data.hash] = this;
+
+    if (!this.uri){
+        // Grab from server
+    }
+}
+
 Photodump.Thumb = function(data, dump){
     this.data = data;
     this.dump = dump;
-   
-    this.id = dump.hash(data.filename);
+    this.dump.thumbs[data.hash] = this;
+
     this.li = $('<li />').addClass('thumb').appendTo(dump.bar.find('ul'));
     
     this.append();
@@ -207,7 +218,7 @@ Photodump.Thumb.prototype.append = function(){
     var self = this;
 
     var img = $('<img />')
-        .attr('id', this.id)
+        .attr('id', this.data.hash)
         .attr('src', this.data.thumbURI)
         .attr('alt', this.data.filename)
         .hide()
@@ -216,7 +227,7 @@ Photodump.Thumb.prototype.append = function(){
         .fadeIn();
     
     function clickHandler(evt){
-        self.dump.stage.show(self.id);
+        self.dump.stage.show(self.data.hash);
     }
     
     return this;
@@ -240,28 +251,30 @@ Photodump.prototype.makeThumb = function(datauri, callback){
     img.src = datauri;
 }
 
-Photodump.Stage = function(selector, bar){
+Photodump.Stage = function(selector, bar, dump){
     this.el = $(selector).addClass('contain');
     this.current = null;
     this.bar = bar;
     this.barHeight = bar.height();
     this.elements = {};
+    this.dump = dump;
 
     return this;
 }
 
 Photodump.Stage.prototype.show = function(id){
-    id = id.substr(0,1) === "#" ? id : '#' + id;
+    console.log(this, id);
+
     if (this.current)
         this.current.removeClass('active');
-
-    var img = this.current = $(id);
-
-    img.addClass('active');
-
-    this.el.css({
-        'background-image' : 'url(' + img.attr('src') + ')' 
-    });
+    this.current = $(id).addClass('active');
+    var image = this.dump.images[id];
+    if (image){
+        console.log(image);
+        this.el.css({
+            'background-image' : 'url(' + image.uri + ')' 
+        });
+    }
     return this;
 }
 

@@ -39,7 +39,7 @@ li.thumb img{
     position: absolute;
     z-index: 1000;
     top: 0; left: 0; right: 0;
-    height: 120px;
+    height: 110px;
     background: #111;
     overflow-y: auto;
     overflow-x: hidden;
