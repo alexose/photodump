@@ -17,14 +17,7 @@ $(document).ready(function(){
     var options = {
         url  : 'https://photodump.firebaseio.com/',
         hash : hash,
-        first: first,
-        controls: [
-            { name : 'prev', icon : 'backward' },
-            { name : 'play', icon : 'play'     },
-            { name : 'next', icon : 'forward'  },
-            { name : 'find', icon : 'th', toggle : ['full'] },
-            { name : 'full', icon : 'fullscreen', toggle : ['find'] }
-        ]
+        first: first
     }
     var photodump = new Photodump(options);
     
@@ -72,30 +65,6 @@ Photodump.Message = function(string, stage){
 
 Photodump.Message.prototype.clear = function(){
     this.el.remove();
-}
-
-Photodump.prototype.initControls = function(){
-    var div  = '<div />',
-        icon = '<i />',
-        self = this;
-
-    this.controls = true;
-
-    this.options.controls.forEach(function(d){
-        $(div)
-            .addClass(d.name)
-            .click($.proxy(function(evt){ 
-                var ele = $(evt.target);
-                self.stage.elements[d.name] = ele;
-                self.stage[d.name](d.name, d.toggle); 
-            }, self))
-            .mousedown(function(){ return false; }) // Prevent selection on double click
-            .appendTo('#controls')
-            .append(
-                $(icon).addClass('icon-' + d.icon)
-            )
-    });
-    return this;
 }
 
 Photodump.prototype.initClientEvents = function(){
@@ -178,10 +147,6 @@ Photodump.prototype.initServerEvents = function(){
     this.firebase.on('child_added', function(snapshot){
         var data = snapshot.val();
         
-        if ($.isEmptyObject(self.thumbs)){
-            self.initControls();
-        }
-
         new Photodump.Thumb(data, self);
         new Photodump.Image(data, self);
         if (self.welcome) self.welcome.clear();
@@ -281,6 +246,8 @@ Photodump.Stage.prototype.show = function(id){
     this.current = $(id).addClass('active');
     var image = this.dump.images[id];
     if (image){
+        console.log(image);
+
         this.el.css({
             'background-image' : 'url(' + image.uri + ')' 
         });
