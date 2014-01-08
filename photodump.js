@@ -49,16 +49,29 @@ Photodump = function(options){
 
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
-        this.welcome = $('<h1 />')
-            .html('You have created a new photodump.  <br />Drag a photo here to begin.')
-            .css({
-                'position' : 'absolute',
-                'top' : '130px', 'left' : 0, 'right': 0
-            });
-        this.stage.el.append(this.welcome);
+        this.welcome = new Photodump.Message(
+            'You have created a new photodump.  <br />Drag a photo here to begin.',
+            this.stage
+        );
     }
 
     return this;
+}
+
+Photodump.Message = function(string, stage){
+    this.el = $('<h1 />')
+        .html(string)
+        .css({
+            'position' : 'absolute',
+            'top' : '130px', 'left' : 0, 'right': 0
+        })
+        .appendTo(stage.el);
+
+    return this;
+}
+
+Photodump.Message.prototype.clear = function(){
+    this.el.remove();
 }
 
 Photodump.prototype.initControls = function(){
@@ -147,6 +160,7 @@ Photodump.prototype.initClientEvents = function(){
                         thumbURI : thumbURI,
                         hash     : hash
                     };
+                    if (self.welcome) self.welcome.clear();
                     self.firebase.push(data);
                 });
                 
@@ -170,11 +184,7 @@ Photodump.prototype.initServerEvents = function(){
 
         new Photodump.Thumb(data, self);
         new Photodump.Image(data, self);
-
-        if (self.welcome){
-            self.welcome.remove();
-            delete self.welcome;
-        }
+        if (self.welcome) self.welcome.clear();
     });
     return this;
 }
@@ -197,9 +207,12 @@ Photodump.Image = function(data, dump){
     this.uri  = dump.data[data.hash];
 
     dump.images[data.hash] = this;
-
     if (!this.uri){
         // Grab from server
+        this.uri = dump.firebase.child('images/' + data.hash).toString();
+    } else {
+        // Push to server
+        dump.firebase.child('images/' + dump.hash).set(this.uri);
     }
 }
 
@@ -263,14 +276,11 @@ Photodump.Stage = function(selector, bar, dump){
 }
 
 Photodump.Stage.prototype.show = function(id){
-    console.log(this, id);
-
     if (this.current)
         this.current.removeClass('active');
     this.current = $(id).addClass('active');
     var image = this.dump.images[id];
     if (image){
-        console.log(image);
         this.el.css({
             'background-image' : 'url(' + image.uri + ')' 
         });
