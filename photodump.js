@@ -8,6 +8,7 @@ $(document).ready(function(){
     hash = hash.substr(1,hash.length);
     var first = false;
     if (hash === ""){
+
         // Generate a new hash
         // TODO: security
         hash = window.location.hash = Math.random().toString(36).substr(2);
@@ -25,53 +26,50 @@ $(document).ready(function(){
 });
 
 Photodump = function(options){
-    this.firebase = new Firebase(options.url + options.hash);
+    this.firebase = new Firebase(options.url + options.hash + '/thumbs');
     this.options  = options;
 
-    this.bar    = $('#bar');
-    this.offset = this.bar.height();
-    this.stage  = new Photodump.Stage('#window', this.bar, this);
-    this.thumbs = {};
+    this.stage = $('#main');
     this.images = {};
-    this.data   = {};
 
     this
+        .initStage()
         .initMessages()
         .initClientEvents()
         .initServerEvents();
+
+};
+
+Photodump.prototype.initStage = function(){
+
+    this.ul = $('<ul />')
+        .appendTo(this.stage);
+
+    return this;
 };
 
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
-        this.welcome = new Photodump.Message(
-            'You have created a new photodump.  <br />Drag a photo here to begin.',
-            this.stage
+        this.welcome = this.message(
+            'You have created a new photodump.  <br />Drag a photo here to begin.'
         );
     }
 
     return this;
 };
 
-Photodump.Message = function(string, stage){
-    this.el = $('<h1 />')
-        .html(string)
-        .css({
-            'position' : 'absolute',
-            'top' : '130px', 'left' : 0, 'right': 0
-        })
-        .appendTo(stage.el);
+Photodump.prototype.message = function(str){
+    var ele = $('<h1 />')
+        .text(str)
+        .appendTo(this.stage);
 
-    return this;
-};
-
-Photodump.Message.prototype.clear = function(){
-    this.el.remove();
+    return ele;
 };
 
 Photodump.prototype.initClientEvents = function(){
-    var self = this;
-    var div  = '<div />';
-    var icon = '<i />';
+    var self = this,
+        div  = '<div />',
+        icon = '<i />';
 
     // Dragover icon for visual feedback
     var size = '128px';
@@ -90,7 +88,7 @@ Photodump.prototype.initClientEvents = function(){
             $(icon).addClass('icon-plus-sign')
         )
         .appendTo(
-            this.stage.el
+            this.stage
         );
 
     document.ondragover = function(evt, file){
@@ -124,21 +122,10 @@ Photodump.prototype.initClientEvents = function(){
         }
 
         function process(file, evt){
-            var dataURI = evt.target.result,
+            var imageURI = evt.target.result,
                 hash    = this.hash(file.name);
 
-            this.data[hash] = dataURI;
-            this.makeThumb(dataURI, function(thumbURI){
-
-                var data = {
-                    filename: file.name,
-                    thumbURI: thumbURI,
-                    hash:     hash
-                };
-
-                if (this.welcome) this.welcome.clear();
-                this.firebase.push(data);
-            }.bind(this));
+            this.images[hash] = new Photodump.Image(imageURI, null, hash, this);
         }
     }.bind(this);
 
@@ -148,11 +135,13 @@ Photodump.prototype.initClientEvents = function(){
 Photodump.prototype.initServerEvents = function(){
 
     this.firebase.on('child_added', function(snapshot){
-        var data = snapshot.val();
+        var data = snapshot.val(),
+            uri = data.uri,
+            hash = data.hash;
 
-        // TODO: reclass thumbs and images somehow so that they aren't different things?
-        new Photodump.Thumb(data, this);
-        new Photodump.Image(data, this);
+        if (!this.images[hash]){
+            this.images[hash] = new Photodump.Image(null, uri, hash, this);
+        }
 
         if (this.welcome){
             this.welcome.clear();
@@ -172,64 +161,95 @@ Photodump.prototype.refToId = function(ref){
     return ref.toString().split('/').pop();
 };
 
-Photodump.Image = function(data, dump){
-    this.data = data;
+// Image instances can be constructed from either a full-size URI or a thumb URI.
+// In each case, they behave slightly differently.
+Photodump.Image = function(imageURI, thumbURI, hash, dump){
+
+    this.imageURI = imageURI;
+    this.thumbURI = thumbURI;
+    this.hash = hash;
     this.dump = dump;
-    this.uri = dump.data[data.hash];
 
-    dump.images[data.hash] = this;
+    var options = dump.options;
 
-    if (!this.uri){
+    this.firebase = new Firebase(options.url + options.hash + '/images');
 
+    if (thumbURI){
+
+        // If we already have a thumbnail, it's because it's already on the server
+        // TODO: add to queue
+        this.append();
     } else {
 
-        // Push to server
-        // TODO: validation
-        // TODO: chunking + progress
-        console.log('Uploading ' + data.hash + '...');
-
-        dump.firebase.child('images/' + data.hash).set(this.uri, function(error){
-            if (error){
-                console.log(error);
-            } else {
-                console.log('Image upload complete.');
-            }
-        });
+        // Create thumb
+        this.makeThumb(function(thumbURI){
+            this.thumbURI = thumbURI;
+            this.append();
+            this.sync();
+        }.bind(this));
     }
-};
 
-Photodump.Thumb = function(data, dump){
-    this.data = data;
-    this.dump = dump;
-    this.dump.thumbs[data.hash] = this;
-
-    this.li = $('<li />').addClass('thumb').appendTo(dump.bar.find('ul'));
-
-    this.append();
     return this;
 };
 
-Photodump.Thumb.prototype.append = function(){
+// Sync with firebase
+Photodump.Image.prototype.sync = function(){
 
-    var img = $('<img />')
-        .attr('id', this.data.hash)
-        .attr('src', this.data.thumbURI)
-        .attr('alt', this.data.filename)
+    // TODO: validation
+    // TODO: chunking + progress
+    console.log('Uploading ' + this.hash + '...');
+
+    // Save thumb
+    this.dump.firebase.child(this.hash).set({
+        hash : this.hash,
+        uri : this.thumbURI
+    });
+
+    // Save image
+    this.firebase.child(this.hash).set(this.imageURI, function(error){
+        if (error){
+            console.log(error);
+        } else {
+            console.log('Image upload complete.');
+        }
+    });
+    return this;
+};
+
+// Append to stage
+Photodump.Image.prototype.append = function(){
+
+    this.element = $('<li />')
+        .addClass('thumb')
+        .append(
+            $('<img />')
+                .attr('src', this.thumbURI)
+                .attr('alt', this.filename)
+        )
         .hide()
+        .fadeIn()
         .click(clickHandler.bind(this))
-        .appendTo(this.li)
-        .fadeIn();
+        .appendTo(this.dump.stage);
 
     function clickHandler(evt){
-        this.dump.stage.show(this.data.hash);
+        this.show(this.data);
     }
 
     return this;
+};
+
+// Show in modal
+Photodump.Image.prototype.show = function(){
+
+    // TODO: modal
+    // TODO: move forward in queue
+    console.log('show modal!');
 };
 
 // Resize an image's dataURI using canvas and provide the result via callback
 // via http://stackoverflow.com/questions/2516117
-Photodump.prototype.makeThumb = function(datauri, callback){
+Photodump.Image.prototype.makeThumb = function(callback){
+
     var img = new Image(),
         height = 90,
         width = 140;
@@ -242,109 +262,5 @@ Photodump.prototype.makeThumb = function(datauri, callback){
         callback(canvas.toDataURL());
     };
 
-    img.src = datauri;
-};
-
-Photodump.Stage = function(selector, bar, dump){
-    this.el = $(selector).addClass('contain');
-    this.current = null;
-    this.bar = bar;
-    this.barHeight = bar.height();
-    this.elements = {};
-    this.dump = dump;
-
-    return this;
-};
-
-Photodump.Stage.prototype.show = function(id){
-    if (this.current){
-        this.current.removeClass('active');
-    }
-
-    this.current = $(id).addClass('active');
-    var image = this.dump.images[id];
-
-    if (image){
-        var uri = image.uri;
-
-        if (!uri || typeof uri === 'undefined'){
-
-            // Grab URI from server
-            this.el.text('Loading...');
-            image.ref = new Firebase(this.dump.options.url + this.dump.options.hash + '/images/' + image.data.hash)
-                .once('value', function(snap){
-                    image.uri = snap.val();
-                    console.log('Image loaded.');
-                    display(this.el, image.uri);
-                }.bind(this));
-        } else {
-            display(this.el, uri);
-        }
-
-    }
-
-    function display(el, uri){
-        el
-            .text('')
-            .css({
-                'background-image' : 'url(' + uri + ')'
-            });
-    }
-
-    return this;
-};
-
-Photodump.Stage.prototype.prev = function(){
-    this.change('prev');
-};
-
-Photodump.Stage.prototype.next = function(){
-    this.change('next');
-};
-
-Photodump.Stage.prototype.find = function(name, toggle){
-    var ele = this.elements[name],
-        self = this;
-
-    toggle.forEach(function(d){
-        if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
-    });
-
-    if (ele.hasClass('active')){
-        this.bar.stop().animate({ 'height' : this.barHeight });
-    } else {
-        this.bar.stop().animate({ 'height' : this.bar.find('ul').height() });
-    }
-    ele.toggleClass('active');
-};
-
-Photodump.Stage.prototype.full = function(name, toggle){
-    var ele = this.elements[name],
-        self = this;
-
-    toggle.forEach(function(d){
-        if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
-    });
-
-    if (ele.hasClass('active')){
-        this.bar.stop().animate({ 'height' : this.barHeight });
-    } else {
-        this.bar.stop().animate({ 'height' : 0 });
-    }
-    ele.toggleClass('active');
-};
-
-Photodump.Stage.prototype.change = function(direction){
-    if (!this.current) return this;
-    var img = this.current.parent()[direction]().find('img');
-
-    if (img.length === 0) return this;
-    if (img.prop('tagName').toLowerCase() === 'img'){
-        this.show(img.attr('id'));
-    }
-    return this;
-};
-
-Photodump.Stage.prototype.play = function(){
-
+    img.src = this.imageURI;
 };

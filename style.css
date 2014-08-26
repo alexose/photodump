@@ -18,70 +18,24 @@ li {
     float: left;
 }
 
-li.thumb{
+li.thumb {
     text-align: center;
     height: 90px;
     width:  140px;
     margin: 10px 5px;
-    pointer: cursor;
+    cursor: pointer;
 }
 
-li.thumb img.active{
+li.thumb img.active {
     background-color:#444;
 }
 
-li.thumb img{
+li.thumb img {
     max-height: 100%;
     max-width: 100%;
     padding: 5px;
 }
 
-#bar {
-    position: absolute;
-    width: 100%;
-    z-index: 1000;
-    top: 0; left: 0; right: 0;
-    height: 220px;
-    background: #111;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-#window {
-    position: absolute;
-    top: 0; bottom: 0; left: 0; right: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    text-align: center;
-    color: #444;
-    text-shadow: 1px 1px 1px rgba(0,0,0,.3);
-}
-
-#window.contain {
-    background: no-repeat center center fixed;
-    -webkit-background-size: contain;
-    -moz-background-size: contain;
-    -o-background-size: contain;
-    background-size: contain;
-}
-
-#controls {
-    position: absolute;
-    z-index: 1001;
-    bottom: 0; left: 0; right: 0;
-    text-align: center;
-    font-size: 64px;
-}
-
-#controls div {
-    display: inline-block;
-    margin: 20px;
-    width: 64px;
-    height: 64px;
-    color: rgba(255,255,255,0.1);
-    cursor: pointer;
-}
-
-#controls div .active {
-    color: rgba(255,255,255,0.3);
+.dragover {
+    color: rgba(255,255,255,0.5)
 }
