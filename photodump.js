@@ -18,27 +18,27 @@ $(document).ready(function(){
         url  : 'https://photodump.firebaseio.com/',
         hash : hash,
         first: first
-    }
+    };
     var photodump = new Photodump(options);
-    
+
 });
 
 Photodump = function(options){
     this.firebase = new Firebase(options.url + options.hash);
     this.options  = options;
-    
+
     this.bar    = $('#bar');
     this.offset = this.bar.height();
-    this.stage  = new Photodump.Stage('#window', this.bar, this) 
+    this.stage  = new Photodump.Stage('#window', this.bar, this);
     this.thumbs = {};
     this.images = {};
     this.data   = {};
-    
+
     this
         .initMessages()
         .initClientEvents()
         .initServerEvents();
-}
+};
 
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
@@ -49,7 +49,7 @@ Photodump.prototype.initMessages = function(){
     }
 
     return this;
-}
+};
 
 Photodump.Message = function(string, stage){
     this.el = $('<h1 />')
@@ -61,11 +61,11 @@ Photodump.Message = function(string, stage){
         .appendTo(stage.el);
 
     return this;
-}
+};
 
 Photodump.Message.prototype.clear = function(){
     this.el.remove();
-}
+};
 
 Photodump.prototype.initClientEvents = function(){
     var self = this;
@@ -80,7 +80,7 @@ Photodump.prototype.initClientEvents = function(){
             'position' : 'absolute',
             'z-index': '1002',
             'pointer-events': 'none',
-            'width' : size, 
+            'width' : size,
             'height': size,
             'font-size': size,
             'display': 'none'
@@ -90,7 +90,7 @@ Photodump.prototype.initClientEvents = function(){
         )
         .appendTo(
             this.stage.el
-        )
+        );
 
     document.ondragover = function(evt, file){
         evt.stopPropagation();
@@ -101,23 +101,23 @@ Photodump.prototype.initClientEvents = function(){
                 left : evt.x - (parseInt(size, 10)/2)
             });
     };
-    
+
     document.ondragout = function(evt, file){
-        // dragover.hide(); 
+        // dragover.hide();
     };
 
-    // Drop event listener 
+    // Drop event listener
     document.ondrop = function(evt, file){
         evt.stopPropagation();
         evt.preventDefault();
-        dragover.hide(); 
-        
+        dragover.hide();
+
         var files = evt.dataTransfer.files;
 
         for (var i = 0; i < files.length; i++) {
             var reader = new FileReader(),
                 file = files[i];
-            
+
             reader.onload = function(theFile){
                 var dataURI = theFile.target.result,
                     hash = self.hash(file.name);
@@ -125,44 +125,44 @@ Photodump.prototype.initClientEvents = function(){
                 self.data[hash] = dataURI;
                 self.makeThumb(dataURI, function(thumbURI){
                     var data = {
-                        filename : file.name, 
+                        filename : file.name,
                         thumbURI : thumbURI,
                         hash     : hash
                     };
                     if (self.welcome) self.welcome.clear();
                     self.firebase.push(data);
                 });
-                
+
             };
             reader.readAsDataURL(file);
         }
     };
 
     return this;
-}
+};
 
 Photodump.prototype.initServerEvents = function(){
     var self = this;
 
     this.firebase.on('child_added', function(snapshot){
         var data = snapshot.val();
-        
+
         new Photodump.Thumb(data, self);
         new Photodump.Image(data, self);
         if (self.welcome) self.welcome.clear();
     });
     return this;
-}
+};
 
 // Generic hash function
 // TODO: Improve this
 Photodump.prototype.hash = function(string){
     return string.replace(/[^a-zA-Z 0-9]+/g, '') + Math.ceil(Math.random()*(10e9));
-}
+};
 
 Photodump.prototype.refToId = function(ref){
     return ref.toString().split('/').pop();
-}
+};
 
 Photodump.Image = function(data, dump){
     this.data = data;
@@ -179,7 +179,7 @@ Photodump.Image = function(data, dump){
         // Push to server
         dump.firebase.child('images/' + dump.hash).set(this.uri);
     }
-}
+};
 
 Photodump.Thumb = function(data, dump){
     this.data = data;
@@ -187,10 +187,10 @@ Photodump.Thumb = function(data, dump){
     this.dump.thumbs[data.hash] = this;
 
     this.li = $('<li />').addClass('thumb').appendTo(dump.bar.find('ul'));
-    
+
     this.append();
     return this;
-}
+};
 
 Photodump.Thumb.prototype.append = function(){
     var self = this;
@@ -203,31 +203,31 @@ Photodump.Thumb.prototype.append = function(){
         .click(clickHandler)
         .appendTo(this.li)
         .fadeIn();
-    
+
     function clickHandler(evt){
         self.dump.stage.show(self.data.hash);
     }
-    
+
     return this;
-}
+};
 
 // Resize an image's dataURI using canvas and provide the result via callback
 // via http://stackoverflow.com/questions/2516117
 Photodump.prototype.makeThumb = function(datauri, callback){
     var img = new Image(),
-        height = 90
+        height = 90,
         width = 140;
-    
+
     img.onload = function() {
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
         callback(canvas.toDataURL());
-    }
+    };
 
     img.src = datauri;
-}
+};
 
 Photodump.Stage = function(selector, bar, dump){
     this.el = $(selector).addClass('contain');
@@ -238,7 +238,7 @@ Photodump.Stage = function(selector, bar, dump){
     this.dump = dump;
 
     return this;
-}
+};
 
 Photodump.Stage.prototype.show = function(id){
     if (this.current)
@@ -246,27 +246,25 @@ Photodump.Stage.prototype.show = function(id){
     this.current = $(id).addClass('active');
     var image = this.dump.images[id];
     if (image){
-        console.log(image);
-
         this.el.css({
-            'background-image' : 'url(' + image.uri + ')' 
+            'background-image' : 'url(' + image.uri + ')'
         });
     }
     return this;
-}
+};
 
 Photodump.Stage.prototype.prev = function(){
     this.change('prev');
-}
+};
 
 Photodump.Stage.prototype.next = function(){
     this.change('next');
-}
+};
 
 Photodump.Stage.prototype.find = function(name, toggle){
     var ele = this.elements[name],
         self = this;
-    
+
     toggle.forEach(function(d){
         if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
     });
@@ -277,36 +275,35 @@ Photodump.Stage.prototype.find = function(name, toggle){
         this.bar.stop().animate({ 'height' : this.bar.find('ul').height() });
     }
     ele.toggleClass('active');
-}
+};
 
 Photodump.Stage.prototype.full = function(name, toggle){
     var ele = this.elements[name],
         self = this;
-    
+
     toggle.forEach(function(d){
         if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
     });
-    
+
     if (ele.hasClass('active')){
         this.bar.stop().animate({ 'height' : this.barHeight });
     } else {
         this.bar.stop().animate({ 'height' : 0 });
     }
     ele.toggleClass('active');
-}
+};
 
 Photodump.Stage.prototype.change = function(direction){
     if (!this.current) return this;
     var img = this.current.parent()[direction]().find('img');
-    
+
     if (img.length === 0) return this;
     if (img.prop('tagName').toLowerCase() === 'img'){
         this.show(img.attr('id'));
     }
     return this;
-}
+};
 
 Photodump.Stage.prototype.play = function(){
-    
-}
 
+};
