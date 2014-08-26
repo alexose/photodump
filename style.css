@@ -23,6 +23,7 @@ li.thumb{
     height: 90px;
     width:  140px;
     margin: 10px 5px;
+    pointer: cursor;
 }
 
 li.thumb img.active{

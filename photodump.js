@@ -181,14 +181,6 @@ Photodump.Image = function(data, dump){
 
     if (!this.uri){
 
-        // Grab URI from server
-        // TODO: move this under the click event... or load in background?
-        this.ref = new Firebase(dump.options.url + dump.options.hash + '/images/' + data.hash)
-            .once('value', function(snap){
-                this.uri = snap.val();
-                console.log('Image loaded.');
-            }.bind(this));
-
     } else {
 
         // Push to server
@@ -275,14 +267,30 @@ Photodump.Stage.prototype.show = function(id){
     if (image){
         var uri = image.uri;
 
-        if (typeof uri === 'undefined'){
-            console.log('Tried to show an image, but it hasn\'t loaded yet.');
+        if (!uri || typeof uri === 'undefined'){
+
+            // Grab URI from server
+            this.el.text('Loading...');
+            image.ref = new Firebase(this.dump.options.url + this.dump.options.hash + '/images/' + image.data.hash)
+                .once('value', function(snap){
+                    image.uri = snap.val();
+                    console.log('Image loaded.');
+                    display(this.el, image.uri);
+                }.bind(this));
         } else {
-            this.el.css({
-                'background-image' : 'url(' + image.uri + ')'
-            });
+            display(this.el, uri);
         }
+
     }
+
+    function display(el, uri){
+        el
+            .text('')
+            .css({
+                'background-image' : 'url(' + uri + ')'
+            });
+    }
+
     return this;
 };
 
