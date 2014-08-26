@@ -19,6 +19,7 @@ $(document).ready(function(){
         hash : hash,
         first: first
     };
+
     var photodump = new Photodump(options);
 
 });
@@ -77,13 +78,13 @@ Photodump.prototype.initClientEvents = function(){
     var dragover = $(div)
         .addClass('dragover')
         .css({
-            'position' : 'absolute',
-            'z-index': '1002',
+            'position':       'absolute',
+            'z-index':        '1002',
             'pointer-events': 'none',
-            'width' : size,
-            'height': size,
-            'font-size': size,
-            'display': 'none'
+            'width':          size,
+            'height':         size,
+            'font-size':      size,
+            'display':        'none'
         })
         .append(
             $(icon).addClass('icon-plus-sign')
@@ -107,7 +108,7 @@ Photodump.prototype.initClientEvents = function(){
     };
 
     // Drop event listener
-    document.ondrop = function(evt, file){
+    document.ondrop = function(evt){
         evt.stopPropagation();
         evt.preventDefault();
         dragover.hide();
@@ -118,39 +119,46 @@ Photodump.prototype.initClientEvents = function(){
             var reader = new FileReader(),
                 file = files[i];
 
-            reader.onload = function(theFile){
-                var dataURI = theFile.target.result,
-                    hash = self.hash(file.name);
-
-                self.data[hash] = dataURI;
-                self.makeThumb(dataURI, function(thumbURI){
-                    var data = {
-                        filename : file.name,
-                        thumbURI : thumbURI,
-                        hash     : hash
-                    };
-                    if (self.welcome) self.welcome.clear();
-                    self.firebase.push(data);
-                });
-
-            };
+            reader.onload = process.bind(this, file);
             reader.readAsDataURL(file);
         }
-    };
+
+        function process(file, evt){
+            var dataURI = evt.target.result,
+                hash    = this.hash(file.name);
+
+            this.data[hash] = dataURI;
+            this.makeThumb(dataURI, function(thumbURI){
+
+                var data = {
+                    filename: file.name,
+                    thumbURI: thumbURI,
+                    hash:     hash
+                };
+
+                if (this.welcome) this.welcome.clear();
+                this.firebase.push(data);
+            }.bind(this));
+        }
+    }.bind(this);
 
     return this;
 };
 
 Photodump.prototype.initServerEvents = function(){
-    var self = this;
 
     this.firebase.on('child_added', function(snapshot){
         var data = snapshot.val();
 
-        new Photodump.Thumb(data, self);
-        new Photodump.Image(data, self);
-        if (self.welcome) self.welcome.clear();
-    });
+        // TODO: reclass thumbs and images somehow so that they aren't different things?
+        new Photodump.Thumb(data, this);
+        new Photodump.Image(data, this);
+
+        if (this.welcome){
+            this.welcome.clear();
+        }
+    }.bind(this));
+
     return this;
 };
 
@@ -167,17 +175,34 @@ Photodump.prototype.refToId = function(ref){
 Photodump.Image = function(data, dump){
     this.data = data;
     this.dump = dump;
-
-    // Try to procure the image data
-    this.uri  = dump.data[data.hash];
+    this.uri = dump.data[data.hash];
 
     dump.images[data.hash] = this;
+
     if (!this.uri){
-        // Grab from server
-        this.uri = dump.firebase.child('images/' + data.hash).toString();
+
+        // Grab URI from server
+        // TODO: move this under the click event... or load in background?
+        this.ref = new Firebase(dump.options.url + dump.options.hash + '/images/' + data.hash)
+            .once('value', function(snap){
+                this.uri = snap.val();
+                console.log('Image loaded.');
+            }.bind(this));
+
     } else {
+
         // Push to server
-        dump.firebase.child('images/' + dump.hash).set(this.uri);
+        // TODO: validation
+        // TODO: chunking + progress
+        console.log('Uploading ' + data.hash + '...');
+
+        dump.firebase.child('images/' + data.hash).set(this.uri, function(error){
+            if (error){
+                console.log(error);
+            } else {
+                console.log('Image upload complete.');
+            }
+        });
     }
 };
 
@@ -193,19 +218,18 @@ Photodump.Thumb = function(data, dump){
 };
 
 Photodump.Thumb.prototype.append = function(){
-    var self = this;
 
     var img = $('<img />')
         .attr('id', this.data.hash)
         .attr('src', this.data.thumbURI)
         .attr('alt', this.data.filename)
         .hide()
-        .click(clickHandler)
+        .click(clickHandler.bind(this))
         .appendTo(this.li)
         .fadeIn();
 
     function clickHandler(evt){
-        self.dump.stage.show(self.data.hash);
+        this.dump.stage.show(this.data.hash);
     }
 
     return this;
@@ -241,14 +265,23 @@ Photodump.Stage = function(selector, bar, dump){
 };
 
 Photodump.Stage.prototype.show = function(id){
-    if (this.current)
+    if (this.current){
         this.current.removeClass('active');
+    }
+
     this.current = $(id).addClass('active');
     var image = this.dump.images[id];
+
     if (image){
-        this.el.css({
-            'background-image' : 'url(' + image.uri + ')'
-        });
+        var uri = image.uri;
+
+        if (typeof uri === 'undefined'){
+            console.log('Tried to show an image, but it hasn\'t loaded yet.');
+        } else {
+            this.el.css({
+                'background-image' : 'url(' + image.uri + ')'
+            });
+        }
     }
     return this;
 };
