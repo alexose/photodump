@@ -37,9 +37,10 @@ li.thumb img{
 
 #bar {
     position: absolute;
+    width: 100%;
     z-index: 1000;
     top: 0; left: 0; right: 0;
-    height: 110px;
+    height: 220px;
     background: #111;
     overflow-y: auto;
     overflow-x: hidden;
@@ -56,7 +57,7 @@ li.thumb img{
 }
 
 #window.contain {
-    background: no-repeat center center fixed; 
+    background: no-repeat center center fixed;
     -webkit-background-size: contain;
     -moz-background-size: contain;
     -o-background-size: contain;
