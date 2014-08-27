@@ -29,11 +29,13 @@ Photodump = function(options){
     this.firebase = new Firebase(options.url + options.hash + '/thumbs');
     this.options  = options;
 
-    this.stage = $('#main');
+    this.stage  = $('#main');
+    this.box    = $('#box');
     this.images = {};
 
     this
         .initStage()
+        .initModal()
         .initMessages()
         .initClientEvents()
         .initServerEvents();
@@ -44,6 +46,14 @@ Photodump.prototype.initStage = function(){
 
     this.ul = $('<ul />')
         .appendTo(this.stage);
+
+    return this;
+};
+
+Photodump.prototype.initModal = function(){
+
+    this.modal = $('<div class="modal" />')
+        .appendTo(this.box);
 
     return this;
 };
@@ -241,9 +251,19 @@ Photodump.Image.prototype.append = function(){
 // Show in modal
 Photodump.Image.prototype.show = function(){
 
-    // TODO: modal
-    // TODO: move forward in queue
-    console.log('show modal!');
+    if (this.imageURI){
+        this.dump.modal
+            .empty()
+            .append(
+                $('<img />')
+                    .attr('src', this.imageURI)
+            )
+            .show();
+    } else {
+
+        // TODO: move forward in queue
+
+    }
 };
 
 // Resize an image's dataURI using canvas and provide the result via callback
