@@ -287,7 +287,7 @@ Photodump.Image.prototype.upload = function(onIncrement){
 Photodump.Image.prototype.chunk = function(string){
 
     var size = 1024 * 20, // TODO: make this adaptive
-        regex = new RegExp('/.{1,' + size + '}/', 'g');
+        regex = new RegExp('.{1,' + size + '}', 'g');
 
     return string.match(regex);
 };
@@ -300,11 +300,14 @@ Photodump.Image.prototype.append = function(){
     this.element = $('<li />')
         .addClass('thumb')
         .append(
-            $('<img />')
-                .attr('src', this.thumbURI)
-                .attr('alt', this.filename)
+            $('<div class="wrap" />')
+                .append(
+                    $('<img />')
+                        .attr('src', this.thumbURI)
+                        .attr('alt', this.filename)
+                )
+                .append(this.shade)
         )
-        .append(this.shade)
         .hide()
         .fadeIn()
         .click(clickHandler.bind(this))

@@ -18,12 +18,15 @@ li {
     float: left;
 }
 
+li.wrap{
+    position: relative;
+}
+
 li.thumb {
     text-align: center;
     height: 90px;
     width:  140px;
     margin: 10px 5px;
-    padding: 5px;
     cursor: pointer;
     position: relative;
 }
@@ -36,7 +39,7 @@ li.thumb img {
 li.thumb .shade {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.1);
+    background: rgba(0,0,0,0.2);
     pointer-events: none;
 }
 
