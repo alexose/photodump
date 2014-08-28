@@ -8,6 +8,7 @@ $(document).ready(function(){
     hash = hash.substr(1,hash.length);
     var first = false;
     if (hash === ""){
+
         // Generate a new hash
         // TODO: security
         hash = window.location.hash = Math.random().toString(36).substr(2);
@@ -15,272 +16,347 @@ $(document).ready(function(){
     }
 
     var options = {
-        url  : 'https://photodump.firebaseio.com/',
-        hash : hash,
-        first: first,
-        controls: [
-            { name : 'prev', icon : 'backward' },
-            { name : 'play', icon : 'play'     },
-            { name : 'next', icon : 'forward'  },
-            { name : 'find', icon : 'th', toggle : ['full'] },
-            { name : 'full', icon : 'fullscreen', toggle : ['find'] }
-        ]
-    }
+        url:   'https://photodump.firebaseio.com/',
+        hash:  hash,
+        first: first
+    };
+
     var photodump = new Photodump(options);
-    
+
 });
 
 Photodump = function(options){
-    this.firebase = new Firebase(options.url + options.hash);
+    this.firebase = new Firebase(options.url + options.hash + '/thumbs');
     this.options  = options;
-    
-    this.bar    = $('#bar');
-    this.offset = this.bar.height();
-    this.stage  = new Photodump.Stage('#window', this.bar) 
+
+    this.stage  = $('#main');
+    this.box    = $('#box');
+    this.images = {};
 
     this
+        .initStage()
+        .initModal()
         .initMessages()
         .initClientEvents()
         .initServerEvents();
-}
+};
+
+Photodump.prototype.initStage = function(){
+
+    this.ul = $('<ul />')
+        .appendTo(this.stage);
+
+    return this;
+};
+
+Photodump.prototype.initModal = function(){
+
+    this.modal = $('<div class="modal" />')
+        .appendTo(this.box);
+
+    return this;
+};
 
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
-        this.welcome = $('<h1 />')
-            .html('You have created a new photodump.  <br />Drag a photo here to begin.')
-            .css({
-                'position' : 'absolute',
-                'top' : '130px', 'left' : 0, 'right': 0
-            });
-        this.stage.el.append(this.welcome);
+        this.welcome = this.message(
+            'You have created a new photodump.  <br />Drag a photo here to begin.'
+        );
     }
 
     return this;
-}
+};
 
-Photodump.prototype.initControls = function(){
-    var div  = '<div />',
-        icon = '<i />',
-        self = this;
+Photodump.prototype.message = function(str){
+    var ele = $('<h1 />')
+        .text(str)
+        .appendTo(this.stage);
 
-    this.controls = true;
-
-    this.options.controls.forEach(function(d){
-        $(div)
-            .addClass(d.name)
-            .click($.proxy(function(evt){ 
-                var ele = $(evt.target);
-                self.stage.elements[d.name] = ele;
-                self.stage[d.name](d.name, d.toggle); 
-            }, self))
-            .mousedown(function(){ return false; }) // Prevent selection on double click
-            .appendTo('#controls')
-            .append(
-                $(icon).addClass('icon-' + d.icon)
-            )
-    });
-    return this;
-}
+    return ele;
+};
 
 Photodump.prototype.initClientEvents = function(){
-    var self = this;
-    var div  = '<div />';
-    var icon = '<i />';
+    var self = this,
+        div  = '<div />',
+        icon = '<i />';
 
     // Dragover icon for visual feedback
     var size = '128px';
     var dragover = $(div)
         .addClass('dragover')
         .css({
-            'position' : 'absolute',
-            'z-index': '1002',
+            'position':       'absolute',
+            'z-index':        '1002',
             'pointer-events': 'none',
-            'width' : size, 
-            'height': size,
-            'font-size': size,
-            'display': 'none'
+            'width':          size,
+            'height':         size,
+            'font-size':      size,
+            'display':        'none'
         })
         .append(
             $(icon).addClass('icon-plus-sign')
         )
         .appendTo(
-            this.stage.el
-        )
+            this.stage
+        );
 
     document.ondragover = function(evt, file){
         evt.stopPropagation();
         evt.preventDefault();
         dragover.show()
             .css({
-                top  : evt.y - (parseInt(size, 10)/2) - self.offset,
+                top  : evt.y - (parseInt(size, 10)/2),
                 left : evt.x - (parseInt(size, 10)/2)
             });
     };
-    
+
     document.ondragout = function(evt, file){
-        // dragover.hide(); 
+        // dragover.hide();
     };
 
-    // Drop event listener 
-    document.ondrop = function(evt, file){
+    // Drop event listener
+    document.ondrop = function(evt){
         evt.stopPropagation();
         evt.preventDefault();
-        dragover.hide(); 
-        
+        dragover.hide();
+
         var files = evt.dataTransfer.files;
 
         for (var i = 0; i < files.length; i++) {
             var reader = new FileReader(),
                 file = files[i];
-            
-            reader.onload = function(theFile){
-                var payload =  theFile.target.result;
-                var response = self.firebase.push({filename : file.name, data : payload });
-                if (response.toString){
-                    var id = response.toString().split('/').pop();
-                } else {
-                    // TODO: Display error
 
-                }
-            };
+            reader.onload = process.bind(this, file);
             reader.readAsDataURL(file);
         }
-    };
+
+        function process(file, evt){
+            var imageURI = evt.target.result,
+                hash    = this.hash(file.name);
+
+            this.images[hash] = new Photodump.Image(imageURI, null, null, hash, this);
+        }
+    }.bind(this);
 
     return this;
-}
+};
 
 Photodump.prototype.initServerEvents = function(){
-    var self = this;
 
     this.firebase.on('child_added', function(snapshot){
-        var data = snapshot.val();
+        var data = snapshot.val(),
+            uri = data.uri,
+            total = data.total,
+            hash = data.hash;
 
-        // Piggyback off of firebase's unique-ish IDs 
-        data.id = self.refToId(snapshot.ref());
-        if (data.data){
-            var li = new Photodump.Thumb(data, self.stage);
-            $('#thumbs').append(li);
+        if (!this.images[hash]){
+            this.images[hash] = new Photodump.Image(null, uri, total, hash, this);
         }
-        
-        if (!self.controls){
-            self.initControls();
-            self.stage.show('image-' + data.id);
+
+        if (this.welcome){
+            this.welcome.empty();
         }
-        if (self.welcome){
-            self.welcome.remove();
-            delete self.welcome;
-        }
-    });
-    
+    }.bind(this));
+
     return this;
-}
+};
+
+// Generic hash function
+// TODO: Improve this
+Photodump.prototype.hash = function(string){
+    return string.replace(/[^a-zA-Z 0-9]+/g, '') + Math.ceil(Math.random()*(10e9));
+};
 
 Photodump.prototype.refToId = function(ref){
     return ref.toString().split('/').pop();
-}
+};
 
-Photodump.Thumb = function(data, stage){
-    var self = this;
-    this.id = 'image-' + data.id;
+// Image instances can be constructed from either a full-size URI or a thumb URI.
+// In each case, they behave slightly differently.
+Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 
-    var tag = 'li';
+    this.imageURI = imageURI;
+    this.thumbURI = thumbURI;
+    this.total = total;
+    this.hash = hash;
+    this.dump = dump;
 
-    var img = $('<img />')
-        .attr('id', this.id)
-        .attr('src', data.data)
-        .attr('alt', data.filename);
-    var element = $('<' + tag + '/>')
+    var options = dump.options,
+        setShade = this.setShade.bind(this);
+
+    this.firebase = new Firebase(options.url + options.hash + '/image-' + hash);
+
+    if (thumbURI){
+
+        // If we already have a thumbnail, it's because it's already on the server
+
+        // Append thumb
+        this.append();
+        this.download();
+    } else {
+
+        // Create thumb
+        this.makeThumb(function(thumbURI){
+            this.thumbURI = thumbURI;
+            this.append();
+            this.upload();
+        }.bind(this));
+    }
+
+    return this;
+};
+
+// Download main image from firebase
+Photodump.Image.prototype.download = function(onIncrement){
+
+    // Firebase has an ugly tendency to download everything before it throws
+    // a whole bunch of child_added events.  With that in mind, we're going to
+    // set up a stream!
+
+    var self = this,
+        chunks = [];
+
+    // TODO: add to queue
+    (function get(count, arr){
+      self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
+
+          var val = snapshot.val(),
+              chunk = val['chunk-' + count];
+
+          arr.push(chunk);
+
+          count += 1;
+          self.setShade(count / self.total);
+
+          if (count >= self.total){
+              self.imageURI = arr.join('');
+              return;
+          }
+          get(count, arr);
+      });
+
+    })(0, []);
+};
+
+// Upload main image to firebase
+Photodump.Image.prototype.upload = function(onIncrement){
+
+    onIncrement = onIncrement || function(){};
+
+    console.log('Uploading ' + this.hash + '...');
+
+    var hash = this.hash,
+        setShade = this.setShade.bind(this);
+
+    // Chunk image
+    var arr = this.chunk(this.imageURI),
+        total = arr.length,
+        firebase = this.firebase;
+
+    // Save thumb
+    this.dump.firebase.child(this.hash).set({
+        hash : hash,
+        uri : this.thumbURI,
+        total : total
+    });
+
+    // Save image
+    (function upload(arr, count){
+
+        setShade(count / total);
+
+        if (!arr.length){
+            console.log('Upload complete');
+            return;
+        }
+
+        var chunk = arr.shift();
+
+        firebase.child('chunk-' + count).set(chunk, function(){
+            console.log('Chunk ' + count + ' complete.');
+            count += 1;
+            upload(arr, count);
+        });
+
+    })(arr, 0);
+
+    return this;
+};
+
+// Chunk a string into N-sized pieces
+Photodump.Image.prototype.chunk = function(string){
+
+    var size = 1024 * 20, // TODO: make this adaptive
+        regex = new RegExp('.{1,' + size + '}', 'g');
+
+    return string.match(regex);
+};
+
+// Append to stage
+Photodump.Image.prototype.append = function(){
+
+    this.shade = $('<div class="shade" />');
+
+    this.element = $('<li />')
         .addClass('thumb')
-        .click($.proxy(clickHandler, this))
+        .append(
+            $('<div class="wrap" />')
+                .append(
+                    $('<img />')
+                        .attr('src', this.thumbURI)
+                        .attr('alt', this.filename)
+                )
+                .append(this.shade)
+        )
         .hide()
-        .append(img)
-        .fadeIn();
-    
-    return element;
+        .fadeIn()
+        .click(clickHandler.bind(this))
+        .appendTo(this.dump.stage);
 
     function clickHandler(evt){
-        stage.show(this.id);
+        this.show(this.data);
     }
-}
+};
 
-Photodump.Stage = function(selector, bar){
-    this.el = $(selector).addClass('contain');
-    this.current = null;
-    this.bar = bar;
-    this.barHeight = bar.height();
-    this.elements = {};
+// Update shade according to progress
+Photodump.Image.prototype.setShade = function(progress){
+    this.shade.css('left', this.element.width() * progress);
+    return;
+};
 
-    return this;
-}
+// Show in modal
+Photodump.Image.prototype.show = function(){
 
-Photodump.Stage.prototype.show = function(id){
-    id = id.substr(0,1) === "#" ? id : '#' + id;
-    if (this.current)
-        this.current.removeClass('active');
-
-    var img = this.current = $(id);
-
-    img.addClass('active');
-
-    this.el.css({
-        'background-image' : 'url(' + img.attr('src') + ')' 
-    });
-    return this;
-}
-
-Photodump.Stage.prototype.prev = function(){
-    this.change('prev');
-}
-
-Photodump.Stage.prototype.next = function(){
-    this.change('next');
-}
-
-Photodump.Stage.prototype.find = function(name, toggle){
-    var ele = this.elements[name],
-        self = this;
-    
-    toggle.forEach(function(d){
-        if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
-    });
-
-    if (ele.hasClass('active')){
-        this.bar.stop().animate({ 'height' : this.barHeight });
+    if (this.imageURI){
+        this.dump.modal
+            .empty()
+            .append(
+                $('<img />')
+                    .attr('src', this.imageURI)
+            )
+            .show();
     } else {
-        this.bar.stop().animate({ 'height' : this.bar.find('ul').height() });
+
+        // TODO: move forward in queue
+
     }
-    ele.toggleClass('active');
-}
+};
 
-Photodump.Stage.prototype.full = function(name, toggle){
-    var ele = this.elements[name],
-        self = this;
-    
-    toggle.forEach(function(d){
-        if (self.elements[d] && self.elements[d].hasClass('active')) self[d](d, []);
-    });
-    
-    if (ele.hasClass('active')){
-        this.bar.stop().animate({ 'height' : this.barHeight });
-    } else {
-        this.bar.stop().animate({ 'height' : 0 });
-    }
-    ele.toggleClass('active');
-}
+// Resize an image's dataURI using canvas and provide the result via callback
+// via http://stackoverflow.com/questions/2516117
+Photodump.Image.prototype.makeThumb = function(callback){
 
-Photodump.Stage.prototype.change = function(direction){
-    if (!this.current) return this;
-    var img = this.current.parent()[direction]().find('img');
-    
-    if (img.length === 0) return this;
-    if (img.prop('tagName').toLowerCase() === 'img'){
-        this.show(img.attr('id'));
-    }
-    return this;
-}
+    var img = new Image(),
+        height = 90,
+        width = 140;
 
-Photodump.Stage.prototype.play = function(){
-    
-}
+    img.onload = function() {
+        var canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL());
+    };
 
+    img.src = this.imageURI;
+};
