@@ -134,7 +134,7 @@ Photodump.prototype.initClientEvents = function(){
             var imageURI = evt.target.result,
                 hash    = this.hash(file.name);
 
-            this.images[hash] = new Photodump.Image(imageURI, null, hash, this);
+            this.images[hash] = new Photodump.Image(imageURI, null, null, hash, this);
         }
     }.bind(this);
 
@@ -146,14 +146,15 @@ Photodump.prototype.initServerEvents = function(){
     this.firebase.on('child_added', function(snapshot){
         var data = snapshot.val(),
             uri = data.uri,
+            total = data.total,
             hash = data.hash;
 
         if (!this.images[hash]){
-            this.images[hash] = new Photodump.Image(null, uri, hash, this);
+            this.images[hash] = new Photodump.Image(null, uri, total, hash, this);
         }
 
         if (this.welcome){
-            this.welcome.clear();
+            this.welcome.empty();
         }
     }.bind(this));
 
@@ -172,76 +173,106 @@ Photodump.prototype.refToId = function(ref){
 
 // Image instances can be constructed from either a full-size URI or a thumb URI.
 // In each case, they behave slightly differently.
-Photodump.Image = function(imageURI, thumbURI, hash, dump){
+Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 
     this.imageURI = imageURI;
     this.thumbURI = thumbURI;
+    this.total = total;
     this.hash = hash;
     this.dump = dump;
 
-    var options = dump.options;
+    var options = dump.options,
+        setShade = this.setShade.bind(this);
 
-    this.firebase = new Firebase(options.url + options.hash + '/images');
+    this.firebase = new Firebase(options.url + options.hash + '/image-' + hash);
 
     if (thumbURI){
 
         // If we already have a thumbnail, it's because it's already on the server
-        // TODO: add to queue
+
+        // Append thumb
         this.append();
+        this.download();
     } else {
 
         // Create thumb
         this.makeThumb(function(thumbURI){
             this.thumbURI = thumbURI;
-
-            var shade = this.append(),
-                width = shade.width();
-
-            this.sync(function(progress){
-
-                // Update shade on increment
-                shade.css('right', width * progress);
-            });
+            this.append();
+            this.upload();
         }.bind(this));
     }
 
     return this;
 };
 
-// Sync with firebase
-Photodump.Image.prototype.sync = function(onIncrement){
+// Download main image from firebase
+Photodump.Image.prototype.download = function(onIncrement){
+
+    // Firebase has an ugly tendency to download everything before it throws
+    // a whole bunch of child_added events.  With that in mind, we're going to
+    // set up a stream!
+
+    var self = this,
+        chunks = [];
+
+    // TODO: add to queue
+    (function get(count, arr){
+      self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
+
+          var val = snapshot.val(),
+              chunk = val['chunk-' + count];
+
+          arr.push(chunk);
+
+          count += 1;
+          self.setShade(count / self.total);
+
+          if (count >= self.total){
+              self.imageURI = arr.join('');
+              return;
+          }
+          get(count, arr);
+      });
+
+    })(0, []);
+};
+
+// Upload main image to firebase
+Photodump.Image.prototype.upload = function(onIncrement){
 
     onIncrement = onIncrement || function(){};
 
-    // TODO: validation
     console.log('Uploading ' + this.hash + '...');
 
-    var hash = this.hash;
-
-    // Save thumb
-    this.dump.firebase.child(this.hash).set({
-        hash : hash,
-        uri : this.thumbURI
-    });
+    var hash = this.hash,
+        setShade = this.setShade.bind(this);
 
     // Chunk image
     var arr = this.chunk(this.imageURI),
         total = arr.length,
-        child = this.firebase.child(hash);
+        firebase = this.firebase;
 
+    // Save thumb
+    this.dump.firebase.child(this.hash).set({
+        hash : hash,
+        uri : this.thumbURI,
+        total : total
+    });
+
+    // Save image
     (function upload(arr, count){
 
-        var progress = arr.length / total;
-        onIncrement(progress);
+        setShade(count / total);
 
         if (!arr.length){
             console.log('Upload complete');
             return;
         }
 
-        var chunk = arr.pop();
+        var chunk = arr.shift();
 
-        child.set(hash + '-' + count, function(){
+        firebase.child('chunk-' + count).set(chunk, function(){
             console.log('Chunk ' + count + ' complete.');
             count += 1;
             upload(arr, count);
@@ -264,7 +295,7 @@ Photodump.Image.prototype.chunk = function(string){
 // Append to stage
 Photodump.Image.prototype.append = function(){
 
-    var shade = $('<div class="shade" />');
+    this.shade = $('<div class="shade" />');
 
     this.element = $('<li />')
         .addClass('thumb')
@@ -273,7 +304,7 @@ Photodump.Image.prototype.append = function(){
                 .attr('src', this.thumbURI)
                 .attr('alt', this.filename)
         )
-        .append(shade)
+        .append(this.shade)
         .hide()
         .fadeIn()
         .click(clickHandler.bind(this))
@@ -282,8 +313,12 @@ Photodump.Image.prototype.append = function(){
     function clickHandler(evt){
         this.show(this.data);
     }
+};
 
-    return shade;
+// Update shade according to progress
+Photodump.Image.prototype.setShade = function(progress){
+    this.shade.css('left', this.element.width() * progress);
+    return;
 };
 
 // Show in modal
