@@ -23,17 +23,21 @@ li.thumb {
     height: 90px;
     width:  140px;
     margin: 10px 5px;
+    padding: 5px;
     cursor: pointer;
-}
-
-li.thumb img.active {
-    background-color:#444;
+    position: relative;
 }
 
 li.thumb img {
     max-height: 100%;
     max-width: 100%;
-    padding: 5px;
+}
+
+li.thumb .shade {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.1);
+    pointer-events: none;
 }
 
 .dragover {

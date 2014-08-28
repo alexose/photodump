@@ -16,8 +16,8 @@ $(document).ready(function(){
     }
 
     var options = {
-        url  : 'https://photodump.firebaseio.com/',
-        hash : hash,
+        url:   'https://photodump.firebaseio.com/',
+        hash:  hash,
         first: first
     };
 
@@ -39,7 +39,6 @@ Photodump = function(options){
         .initMessages()
         .initClientEvents()
         .initServerEvents();
-
 };
 
 Photodump.prototype.initStage = function(){
@@ -194,8 +193,15 @@ Photodump.Image = function(imageURI, thumbURI, hash, dump){
         // Create thumb
         this.makeThumb(function(thumbURI){
             this.thumbURI = thumbURI;
-            this.append();
-            this.sync();
+
+            var shade = this.append(),
+                width = shade.width();
+
+            this.sync(function(progress){
+
+                // Update shade on increment
+                shade.css('right', width * progress);
+            });
         }.bind(this));
     }
 
@@ -203,31 +209,62 @@ Photodump.Image = function(imageURI, thumbURI, hash, dump){
 };
 
 // Sync with firebase
-Photodump.Image.prototype.sync = function(){
+Photodump.Image.prototype.sync = function(onIncrement){
+
+    onIncrement = onIncrement || function(){};
 
     // TODO: validation
-    // TODO: chunking + progress
     console.log('Uploading ' + this.hash + '...');
+
+    var hash = this.hash;
 
     // Save thumb
     this.dump.firebase.child(this.hash).set({
-        hash : this.hash,
+        hash : hash,
         uri : this.thumbURI
     });
 
-    // Save image
-    this.firebase.child(this.hash).set(this.imageURI, function(error){
-        if (error){
-            console.log(error);
-        } else {
-            console.log('Image upload complete.');
+    // Chunk image
+    var arr = this.chunk(this.imageURI),
+        total = arr.length,
+        child = this.firebase.child(hash);
+
+    (function upload(arr, count){
+
+        var progress = arr.length / total;
+        onIncrement(progress);
+
+        if (!arr.length){
+            console.log('Upload complete');
+            return;
         }
-    });
+
+        var chunk = arr.pop();
+
+        child.set(hash + '-' + count, function(){
+            console.log('Chunk ' + count + ' complete.');
+            count += 1;
+            upload(arr, count);
+        });
+
+    })(arr, 0);
+
     return this;
+};
+
+// Chunk a string into N-sized pieces
+Photodump.Image.prototype.chunk = function(string){
+
+    var size = 1024 * 20, // TODO: make this adaptive
+        regex = new RegExp('/.{1,' + size + '}/', 'g');
+
+    return string.match(regex);
 };
 
 // Append to stage
 Photodump.Image.prototype.append = function(){
+
+    var shade = $('<div class="shade" />');
 
     this.element = $('<li />')
         .addClass('thumb')
@@ -236,6 +273,7 @@ Photodump.Image.prototype.append = function(){
                 .attr('src', this.thumbURI)
                 .attr('alt', this.filename)
         )
+        .append(shade)
         .hide()
         .fadeIn()
         .click(clickHandler.bind(this))
@@ -245,7 +283,7 @@ Photodump.Image.prototype.append = function(){
         this.show(this.data);
     }
 
-    return this;
+    return shade;
 };
 
 // Show in modal
