@@ -37,6 +37,7 @@ Photodump = function(options){
         .initStage()
         .initModal()
         .initMessages()
+        .initQueue()
         .initClientEvents()
         .initServerEvents();
 };
@@ -63,6 +64,16 @@ Photodump.prototype.initMessages = function(){
             'You have created a new photodump.<br />Drag a photo here to begin.'
         );
     }
+
+    return this;
+};
+
+Photodump.prototype.initQueue = function(){
+
+    this.queues = {
+        upload : new Photodump.Queue(),
+        download : new Photodump.Queue()
+    };
 
     return this;
 };
@@ -209,76 +220,86 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 // Download main image from firebase
 Photodump.Image.prototype.download = function(onIncrement){
 
-    // Firebase has an ugly tendency to download everything before it throws
-    // a whole bunch of child_added events.  With that in mind, we're going to
-    // set up a stream!
+    var queue = this.dump.queues.download,
+        self = this;
 
-    var self = this,
-        chunks = [];
+    queue.add(function(onFinish){
 
-    // TODO: add to queue
-    (function get(count, arr){
-      self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
+        // Firebase has an ugly tendency to download everything before it throws
+        // a whole bunch of child_added events.  With that in mind, we're going to
+        // set up a stream!
+        var chunks = [];
 
-          var val = snapshot.val(),
-              chunk = val['chunk-' + count];
+        (function get(count, arr){
+          self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
 
-          arr.push(chunk);
+              var val = snapshot.val(),
+                  chunk = val['chunk-' + count];
 
-          count += 1;
-          self.setShade(count / self.total);
+              arr.push(chunk);
 
-          if (count >= self.total){
-              self.imageURI = arr.join('');
-              return;
-          }
-          get(count, arr);
-      });
+              count += 1;
+              self.setShade(count / self.total);
 
-    })(0, []);
+              if (count >= self.total){
+                  self.imageURI = arr.join('');
+                  onFinish();
+                  return;
+              }
+              get(count, arr);
+          });
+
+        })(0, []);
+    });
 };
 
 // Upload main image to firebase
 Photodump.Image.prototype.upload = function(onIncrement){
 
+    var queue = this.dump.queues.upload,
+        self = this;
+
     onIncrement = onIncrement || function(){};
 
-    console.log('Uploading ' + this.hash + '...');
+    queue.add(function(onFinish){
 
-    var hash = this.hash,
-        setShade = this.setShade.bind(this);
+        console.log('Uploading ' + this.hash + '...');
 
-    // Chunk image
-    var arr = this.chunk(this.imageURI),
-        total = arr.length,
-        firebase = this.firebase;
+        var hash = self.hash,
+            setShade = self.setShade.bind(self);
 
-    // Save thumb
-    this.dump.firebase.child(this.hash).set({
-        hash : hash,
-        uri : this.thumbURI,
-        total : total
-    });
+        // Chunk image
+        var arr = self.chunk(self.imageURI),
+            total = arr.length,
+            firebase = self.firebase;
 
-    // Save image
-    (function upload(arr, count){
-
-        setShade(count / total);
-
-        if (!arr.length){
-            console.log('Upload complete');
-            return;
-        }
-
-        var chunk = arr.shift();
-
-        firebase.child('chunk-' + count).set(chunk, function(){
-            console.log('Chunk ' + count + ' complete.');
-            count += 1;
-            upload(arr, count);
+        // Save thumb
+        self.dump.firebase.child(self.hash).set({
+            hash : hash,
+            uri : self.thumbURI,
+            total : total
         });
 
-    })(arr, 0);
+        // Save image
+        (function upload(arr, count){
+
+            setShade(count / total);
+
+            if (!arr.length){
+                console.log('Upload complete');
+                onFinish();
+                return;
+            }
+
+            var chunk = arr.shift();
+
+            firebase.child('chunk-' + count).set(chunk, function(){
+                console.log('Chunk ' + count + ' complete.');
+                count += 1;
+                upload(arr, count);
+            });
+        })(arr, 0);
+    });
 
     return this;
 };
@@ -359,4 +380,51 @@ Photodump.Image.prototype.makeThumb = function(callback){
     };
 
     img.src = this.imageURI;
+};
+
+
+// A queue allows us to add a list of functions to be executed one-at-a-time.
+// Note that in order to be queued, a function /must/ take a callback as its
+// final argument!
+Photodump.Queue = function(){
+    this.arr = [];
+    this.running = false;
+};
+
+Photodump.Queue.prototype.add = function(func, args, context){
+
+    if (args && args.length){
+        args = Array.prototype.slice.call(arguments);
+    } else {
+        args = [];
+    }
+
+    // Add callback argument
+    args.push(this.run.bind(this));
+
+    this.arr.push({
+        func : func,
+        args : args,
+        context : context || this
+    });
+
+    // Automatically start if we're not running
+    if (!this.running){
+        this.run();
+    }
+};
+
+Photodump.Queue.prototype.remove = function(func){
+
+};
+
+Photodump.Queue.prototype.run = function(){
+    if (this.arr.length){
+        var obj = this.arr.pop();
+        obj.func.apply(obj.context, obj.args);
+
+        this.running = true;
+    } else {
+        this.running = false;
+    }
 };
