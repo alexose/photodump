@@ -314,7 +314,7 @@ Photodump.Image.prototype.upload = function(onIncrement){
 // Chunk a string into N-sized pieces
 Photodump.Image.prototype.chunk = function(string){
 
-    var size = 1024 * 20, // TODO: make this adaptive
+    var size = 1024 * 200, // TODO: make this adaptive
         regex = new RegExp('.{1,' + size + '}', 'g');
 
     return string.match(regex);
