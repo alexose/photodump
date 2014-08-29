@@ -60,7 +60,7 @@ Photodump.prototype.initModal = function(){
 Photodump.prototype.initMessages = function(){
     if (this.options.first){
         this.welcome = this.message(
-            'You have created a new photodump.  <br />Drag a photo here to begin.'
+            'You have created a new photodump.<br />Drag a photo here to begin.'
         );
     }
 
@@ -69,7 +69,7 @@ Photodump.prototype.initMessages = function(){
 
 Photodump.prototype.message = function(str){
     var ele = $('<h1 />')
-        .text(str)
+        .html(str)
         .appendTo(this.stage);
 
     return ele;
