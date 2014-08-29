@@ -38,6 +38,7 @@ Photodump = function(options){
         .initModal()
         .initMessages()
         .initQueue()
+        .initStorage()
         .initClientEvents()
         .initServerEvents();
 };
@@ -75,6 +76,12 @@ Photodump.prototype.initQueue = function(){
         download : new Photodump.Queue()
     };
 
+    return this;
+};
+
+Photodump.prototype.initStorage = function(){
+
+    this.storage = localStorage;
     return this;
 };
 
@@ -420,7 +427,7 @@ Photodump.Queue.prototype.remove = function(func){
 
 Photodump.Queue.prototype.run = function(){
     if (this.arr.length){
-        var obj = this.arr.pop();
+        var obj = this.arr.shift();
         obj.func.apply(obj.context, obj.args);
 
         this.running = true;
