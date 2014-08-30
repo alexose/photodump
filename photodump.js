@@ -199,15 +199,13 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
     this.hash = hash;
     this.dump = dump;
 
-    var options = dump.options,
-        setShade = this.setShade.bind(this);
+    var options = dump.options;
 
     this.firebase = new Firebase(options.url + options.hash + '/image-' + hash);
 
     if (thumbURI){
 
         // If we already have a thumbnail, it's because it's already on the server
-
         // Append thumb
         this.append();
         this.download();
@@ -228,36 +226,58 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 Photodump.Image.prototype.download = function(onIncrement){
 
     var queue = this.dump.queues.download,
-        self = this;
+        self = this,
+        imageURI = this.getImageURI();
 
-    queue.add(function(onFinish){
+    if (!imageURI){
 
-        // Firebase has an ugly tendency to download everything before it throws
-        // a whole bunch of child_added events.  With that in mind, we're going to
-        // set up a stream!
-        var chunks = [];
+        queue.add(function(onFinish){
 
-        (function get(count, arr){
-          self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
+            // Firebase has an ugly tendency to download everything before it throws
+            // a whole bunch of child_added events.  With that in mind, we're going to
+            // set up a stream!
+            var chunks = [];
 
-              var val = snapshot.val(),
-                  chunk = val['chunk-' + count];
+            (function get(count, arr){
+              self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
 
-              arr.push(chunk);
+                  var val = snapshot.val(),
+                      chunk = val['chunk-' + count];
 
-              count += 1;
-              self.setShade(count / self.total);
+                  arr.push(chunk);
 
-              if (count >= self.total){
-                  self.imageURI = arr.join('');
-                  onFinish();
-                  return;
-              }
-              get(count, arr);
-          });
+                  count += 1;
+                  self.setShade(count / self.total);
 
-        })(0, []);
-    });
+                  if (count >= self.total){
+                      self.imageURI = arr.join('');
+
+                      // Add to localstorage
+                      self.storeImageURI.call(self);
+
+                      onFinish();
+                      return;
+                  }
+                  get(count, arr);
+              });
+
+            })(0, []);
+        });
+
+    } else {
+        self.setShade(1);
+        self.imageURI = imageURI;
+    }
+};
+
+Photodump.Image.prototype.storeImageURI = function(){
+    var options = this.dump.options;
+    this.dump.storage.setItem(options.url + options.hash, this.imageURI);
+};
+
+Photodump.Image.prototype.getImageURI = function(){
+    var options = this.dump.options;
+    return this.dump.storage.getItem(options.url + options.hash);
 };
 
 // Upload main image to firebase
