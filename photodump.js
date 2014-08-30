@@ -272,12 +272,12 @@ Photodump.Image.prototype.download = function(onIncrement){
 
 Photodump.Image.prototype.storeImageURI = function(){
     var options = this.dump.options;
-    this.dump.storage.setItem(options.url + options.hash, this.imageURI);
+    this.dump.storage.setItem(options.url + this.hash, this.imageURI);
 };
 
 Photodump.Image.prototype.getImageURI = function(){
     var options = this.dump.options;
-    return this.dump.storage.getItem(options.url + options.hash);
+    return this.dump.storage.getItem(options.url + this.hash);
 };
 
 // Upload main image to firebase
