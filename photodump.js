@@ -3,6 +3,8 @@ photodump.js -- A Firebase-backed photo sharing app.
 By Alex Ose, alex@alexose.com
 */
 
+var instance;
+
 $(document).ready(function(){
     var hash = window.location.hash;
     hash = hash.substr(1,hash.length);
@@ -21,7 +23,7 @@ $(document).ready(function(){
         first: first
     };
 
-    var photodump = new Photodump(options);
+    instance = new Photodump(options);
 
 });
 
@@ -435,4 +437,38 @@ Photodump.Queue.prototype.run = function(){
     } else {
         this.running = false;
     }
+};
+
+/* Secret static methods! */
+
+// Saves any available imageURIs as a zip
+Photodump.prototype.saveAll = function(){
+
+    var self = this;
+
+    $.when(
+        $.getScript('lib/jszip.min.js'),
+        $.getScript('lib/FileSaver.js')
+    ).done(function proceed(){
+        var zip = new JSZip();
+
+        for (var prop in self.images){
+            var image = self.images[prop];
+
+            if (image.imageURI){
+
+                // Remove mimetype stuff
+                var uri = image.imageURI,
+                    stripped = uri.substr(uri.indexOf(',') + 1);
+
+                // TODO: support actual file name instead of hashes
+                zip.file(image.hash + '.jpg', stripped, { base64 : true });
+            }
+        }
+
+        var content = zip.generate({type:"blob"});
+
+        // see FileSaver.js
+        saveAs(content, "example.zip");
+    });
 };
