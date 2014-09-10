@@ -210,7 +210,7 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 
         // Append thumb
         this.append();
-        this.download();
+        // this.download();
     } else {
 
         // Create thumb
@@ -238,22 +238,23 @@ Photodump.Image.prototype.download = function(onIncrement){
         var chunks = [];
 
         (function get(count, arr){
-          self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
+            self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
 
-              var val = snapshot.val(),
-                  chunk = val['chunk-' + count];
+                var val = snapshot.val(),
+                    chunk = val['chunk-' + count];
 
-              arr.push(chunk);
+                arr.push(chunk);
 
-              count += 1;
-              self.setShade(count / self.total);
+                count += 1;
+                self.setShade(count / self.total);
 
-              if (count >= self.total){
-                  self.imageURI = arr.join('');
-                  onFinish();
-                  return;
-              }
-              get(count, arr);
+                if (count >= self.total){
+                    self.imageURI = arr.join('');
+                    onFinish();
+                    return;
+                }
+                console.log('Chunk ' + count + ' downloaded. (' + chunk.length + ' bytes)');
+                get(count, arr);
           });
 
         })(0, []);
@@ -366,7 +367,7 @@ Photodump.Image.prototype.show = function(){
     } else {
 
         // TODO: move forward in queue
-
+        this.download();
     }
 };
 
