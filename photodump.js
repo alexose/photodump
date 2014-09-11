@@ -469,6 +469,6 @@ Photodump.prototype.saveAll = function(){
         var content = zip.generate({type:"blob"});
 
         // see FileSaver.js
-        saveAs(content, "example.zip");
+        saveAs(content, self.options.hash + '.zip');
     });
 };
