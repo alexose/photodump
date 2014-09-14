@@ -195,7 +195,6 @@ Photodump.prototype.refToId = function(ref){
 // In each case, they behave slightly differently.
 Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 
-    this.imageURI = imageURI;
     this.thumbURI = thumbURI;
     this.total = total;
     this.hash = hash;
@@ -206,17 +205,27 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
 
     this.firebase = new Firebase(options.url + options.hash + '/image-' + hash);
 
+    this.imageURI = imageURI;
+
     if (thumbURI){
 
         // If we already have a thumbnail, it's because it's already on the server
-
         // Append thumb
         this.append();
-        // this.download();
-    } else {
+    } else if (imageURI){
+
+        // Resize main image
+        console.log(imageURI);
+        this.makeThumb(imageURI, proceed.bind(this), 1280);
+    }
+
+    function proceed(imageURI){
+
+        console.log(imageURI);
+        this.imageURI = imageURI;
 
         // Create thumb
-        this.makeThumb(function(thumbURI){
+        this.makeThumb(imageURI, function(thumbURI){
             this.thumbURI = thumbURI;
             this.append();
             this.upload();
@@ -375,13 +384,28 @@ Photodump.Image.prototype.show = function(){
 
 // Resize an image's dataURI using canvas and provide the result via callback
 // via http://stackoverflow.com/questions/2516117
-Photodump.Image.prototype.makeThumb = function(callback){
+Photodump.Image.prototype.makeThumb = function(imageURI, callback, width, height){
 
     var img = new Image(),
-        height = 90,
-        width = 140;
+        ratio;
 
     img.onload = function() {
+
+        if (width && !height){
+            ratio = img.width > width ? width / img.width : 1;
+            height = ratio * img.height;
+        }
+
+        if (height && !width){
+            ratio = img.height > height ? height / img.height : 1;
+            width = ratio * img.width;
+        }
+
+        if (!width && !height){
+            height = 90;
+            width = 120;
+        }
+
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
@@ -389,7 +413,7 @@ Photodump.Image.prototype.makeThumb = function(callback){
         callback(canvas.toDataURL());
     };
 
-    img.src = this.imageURI;
+    img.src = imageURI;
 };
 
 
