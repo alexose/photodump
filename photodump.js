@@ -38,6 +38,7 @@ Photodump = function(options){
     this
         .initStage()
         .initModal()
+        .initBox()
         .initMessages()
         .initQueue()
         .initStorage()
@@ -58,6 +59,19 @@ Photodump.prototype.initModal = function(){
     this.modal = $('<div class="modal" />')
         .appendTo(this.box);
 
+    return this;
+};
+
+Photodump.prototype.initBox = function(){
+
+    var box = this.box,
+        modal = this.modal;
+
+    box.click(function(evt){
+        if (modal.find('img').size() > 0){
+            modal.empty();
+        }
+    });
     return this;
 };
 
