@@ -84,7 +84,6 @@ Photodump.prototype.initBox = function(){
         modal = this.modal;
 
     box.click(function(evt){
-        evt.stopPropagation();
         if (modal.find('img').size() > 0){
             modal.empty();
         }
