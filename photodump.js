@@ -59,10 +59,6 @@ Photodump.prototype.initUpload = function(){
       }
     });
 
-  $('body').click(function(){
-      $('#upload').trigger('click');
-  });
-
   return this;
 }
 
