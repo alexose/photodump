@@ -287,7 +287,7 @@ Photodump.Image.prototype.upload = function(onIncrement){
 
     queue.add(function(onFinish){
 
-        console.log('Uploading ' + this.hash + '...');
+        console.log('Uploading ' + self.hash + '...');
 
         var hash = self.hash,
             setShade = self.setShade.bind(self);
