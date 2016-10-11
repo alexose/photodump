@@ -36,6 +36,7 @@ Photodump = function(options){
     this.images = {};
 
     this
+				.initDb()
         .initUpload()
         .initStage()
         .initModal()
@@ -45,6 +46,51 @@ Photodump = function(options){
         .initStorage()
         .initClientEvents()
         .initServerEvents();
+};
+
+Photodump.prototype.initDb = function(){
+		if (window.indexedDB){
+				var db;
+
+				request = window.indexedDB.open('photodump-' + this.options.hash, 1);
+
+				request.onerror = function(event) {
+						console.log('error: ');
+				};
+				
+        request.onsuccess = function(event) {
+						db = request.result;
+				}
+				 
+				request.onupgradeneeded = function(event) {
+						var db = event.target.result;
+						var objectStore = db.createObjectStore('images', {keyPath: 'hash'});
+				}
+
+				this.add = function(hash, dataURI){
+					if (db){
+						var req = db.transaction(['images'], 'readwrite')
+							.objectStore('images')
+							.add({ hash: hash, dataURI: dataURI });
+					}
+				}
+
+				this.read = function(hash, cb){
+					if (db){
+						var transaction = db.transaction(['images'])
+						var store = transaction.objectStore('images');
+						var req = store.get(hash);
+						req.onsuccess = function(event) {
+              var dataURI = req.result && req.result.dataURI ? req.result.dataURI : false;
+							cb(dataURI);
+						};
+						req.onerror = function(event) {
+							cb(false);
+						};
+					}
+				}
+		}
+		return this;
 };
 
 Photodump.prototype.initUpload = function(){
@@ -170,8 +216,6 @@ Photodump.prototype.initClientEvents = function(){
         evt.preventDefault();
         dragover.hide();
 
-        console.log(files);
-
         files = files || evt.dataTransfer.files;
 
         for (var i = 0; i < files.length; i++) {
@@ -202,7 +246,16 @@ Photodump.prototype.initServerEvents = function(){
             hash = data.hash;
 
         if (!this.images[hash]){
-            this.images[hash] = new Photodump.Image(null, uri, total, hash, this);
+
+						// See if we have the image in the db
+						if (this.read){
+							this.read(hash, function(result){
+								this.images[hash] = new Photodump.Image(result, uri, total, hash, this);
+							}.bind(this));	
+						} else {
+							this.images[hash] = new Photodump.Image(null, uri, total, hash, this);
+						}
+
         }
 
         if (this.welcome){
@@ -241,10 +294,8 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
     if (thumbURI){
 
         // If we already have a thumbnail, it's because it's already on the server
-
         // Append thumb
         this.append();
-        // this.download();
     } else {
 
         // Create thumb
@@ -252,6 +303,11 @@ Photodump.Image = function(imageURI, thumbURI, total, hash, dump){
             this.thumbURI = thumbURI;
             this.append();
             this.upload();
+
+            // Record full image in db
+            if (dump.add){
+              dump.add(this.hash, this.imageURI);
+            }
         }.bind(this));
     }
 
@@ -287,6 +343,11 @@ Photodump.Image.prototype.download = function(onIncrement){
 
                 if (count >= self.total){
                     self.imageURI = arr.join('');
+                   
+                    if (self.dump.add){
+                      self.dump.add(self.hash, self.imageURI);
+                    }
+
                     onFinish();
                     return;
                 }
@@ -374,7 +435,7 @@ Photodump.Image.prototype.append = function(){
                         .attr('src', this.thumbURI)
                         .attr('alt', this.filename)
                 )
-                .append(this.shade)
+                .append(this.imageURI ? null : this.shade)
         )
         .hide()
         .css('display', 'block')
