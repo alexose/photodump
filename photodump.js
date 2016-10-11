@@ -392,25 +392,33 @@ Photodump.Image.prototype.show = function(){
 // via http://stackoverflow.com/questions/2516117
 Photodump.Image.prototype.makeThumb = function(callback){
 
-    var img = new Image(),
-				maxWidth = 140,
-				maxHeight = 90;
+    var img = new Image();
 
-    img.onload = function() {
+    img.onload = function(){
         var canvas = document.createElement("canvas");
 
-				// via http://stackoverflow.com/questions/3971841
-				var ratio =  Math.min(maxWidth / img.width, maxHeight / img.height),
-						width = img.width * ratio,
-						height = img.height * ratio;
+        // Resize entire image if it's over an arbitrary size.
+        // TODO: this probably belongs somewhere else
+        var full = this.getDimensions(3000, 3000, img);
+        canvas.getContext("2d").drawImage(img, 0, 0, full.width, full.height);
 
-				console.log(ratio, width, height);
+        if (full.width !== img.width || full.height !== img.height){
+          canvas.width = full.width;
+          canvas.height = full.height;
+          canvas.getContext("2d").drawImage(img, 0, 0, full.width, full.height);
+          console.log('Resized extremely large image from ' + img.width + 'x' + img.height + ' to ' + full.width + 'x' + full.height + '.');
+          this.imageURI = canvas.toDataURL('image/jpeg');
+        }
 
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL());
-    };
+        console.log(full.width, img.width);
+
+        var thumb = this.getDimensions(140, 90, img);
+
+        canvas.width = thumb.width;
+        canvas.height = thumb.height;
+        canvas.getContext("2d").drawImage(img, 0, 0, thumb.width, thumb.height);
+        callback(canvas.toDataURL('image/jpeg'));
+    }.bind(this);
 
     img.src = this.imageURI;
 };
@@ -495,3 +503,14 @@ Photodump.prototype.saveAll = function(){
         saveAs(content, self.options.hash + '.zip');
     });
 };
+
+// Return a new height and width based on dimensions
+// via http://stackoverflow.com/questions/3971841
+Photodump.Image.prototype.getDimensions = function(maxWidth, maxHeight, img){
+    var ratio =  Math.min(maxWidth / img.width, maxHeight / img.height),
+        width = img.width * ratio,
+        height = img.height * ratio;
+
+    return { width: width, height: height };
+}
+
