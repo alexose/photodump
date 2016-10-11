@@ -36,6 +36,7 @@ Photodump = function(options){
     this.images = {};
 
     this
+        .initUpload()
         .initStage()
         .initModal()
         .initBox()
@@ -45,6 +46,25 @@ Photodump = function(options){
         .initClientEvents()
         .initServerEvents();
 };
+
+Photodump.prototype.initUpload = function(){
+  $('#upload')
+    .click(function(evt){
+      evt.stopPropagation();
+    })
+    .change(function(evt){
+      var files = evt.target.files;
+      if (files){
+        document.ondrop(evt, files);
+      }
+    });
+
+  $(document).click(function(){
+      $('#upload').trigger('click');
+  });
+
+  return this;
+}
 
 Photodump.prototype.initStage = function(){
 
@@ -68,6 +88,7 @@ Photodump.prototype.initBox = function(){
         modal = this.modal;
 
     box.click(function(evt){
+        evt.stopPropagation();
         if (modal.find('img').size() > 0){
             modal.empty();
         }
@@ -149,12 +170,14 @@ Photodump.prototype.initClientEvents = function(){
     };
 
     // Drop event listener
-    document.ondrop = function(evt){
+    document.ondrop = function(evt, files){
         evt.stopPropagation();
         evt.preventDefault();
         dragover.hide();
 
-        var files = evt.dataTransfer.files;
+        console.log(files);
+
+        files = files || evt.dataTransfer.files;
 
         for (var i = 0; i < files.length; i++) {
             var reader = new FileReader(),
@@ -360,6 +383,7 @@ Photodump.Image.prototype.append = function(){
         .appendTo(this.dump.stage);
 
     function clickHandler(evt){
+        evt.stopPropagation();
         this.show(this.data);
     }
 };
