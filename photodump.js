@@ -277,7 +277,10 @@ Photodump.Image.prototype.download = function(onIncrement){
         var chunks = [];
 
         (function get(count, arr){
-            self.firebase.startAt(null, 'chunk-' + count).limit(1).on('value', function(snapshot){
+            var started = new Date();
+            var q = self.firebase.startAt(null, 'chunk-' + count).limit(1);
+            
+            q.on('value', function(snapshot){
 
                 var val = snapshot.val(),
                     chunk = val['chunk-' + count];
@@ -292,10 +295,12 @@ Photodump.Image.prototype.download = function(onIncrement){
                     onFinish();
                     return;
                 }
-                console.log('Chunk ' + count + ' downloaded. (' + chunk.length + ' bytes)');
+                var finished = new Date();
+                var time = (finished - started) / 1000;
+                console.log('Chunk ' + count + ' downloaded. (' + chunk.length + ' bytes, ' + time + ' seconds)');
+                q.off()
                 get(count, arr);
           });
-
         })(0, []);
     });
 };
