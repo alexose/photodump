@@ -354,6 +354,7 @@ Photodump.Image.prototype.append = function(){
                 .append(this.shade)
         )
         .hide()
+        .css('display', 'block')
         .fadeIn()
         .click(clickHandler.bind(this))
         .appendTo(this.dump.stage);
@@ -392,11 +393,19 @@ Photodump.Image.prototype.show = function(){
 Photodump.Image.prototype.makeThumb = function(callback){
 
     var img = new Image(),
-        height = 90,
-        width = 140;
+				maxWidth = 140,
+				maxHeight = 90;
 
     img.onload = function() {
         var canvas = document.createElement("canvas");
+
+				// via http://stackoverflow.com/questions/3971841
+				var ratio =  Math.min(maxWidth / img.width, maxHeight / img.height),
+						width = img.width * ratio,
+						height = img.height * ratio;
+
+				console.log(ratio, width, height);
+
         canvas.width = width;
         canvas.height = height;
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
