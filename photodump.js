@@ -59,7 +59,7 @@ Photodump.prototype.initUpload = function(){
       }
     });
 
-  $(document).click(function(){
+  $('body').click(function(){
       $('#upload').trigger('click');
   });
 
