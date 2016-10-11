@@ -166,7 +166,7 @@ Photodump.prototype.initClientEvents = function(){
 
         function process(file, evt){
             var imageURI = evt.target.result,
-                hash    = this.hash(file.name);
+                hash = this.hash(file.name + file.size);
 
             this.images[hash] = new Photodump.Image(imageURI, null, null, hash, this);
         }
@@ -402,15 +402,13 @@ Photodump.Image.prototype.makeThumb = function(callback){
         var full = this.getDimensions(3000, 3000, img);
         canvas.getContext("2d").drawImage(img, 0, 0, full.width, full.height);
 
-        if (full.width !== img.width || full.height !== img.height){
+        if (full.width < img.width || full.height < img.height){
           canvas.width = full.width;
           canvas.height = full.height;
           canvas.getContext("2d").drawImage(img, 0, 0, full.width, full.height);
           console.log('Resized extremely large image from ' + img.width + 'x' + img.height + ' to ' + full.width + 'x' + full.height + '.');
           this.imageURI = canvas.toDataURL('image/jpeg');
         }
-
-        console.log(full.width, img.width);
 
         var thumb = this.getDimensions(140, 90, img);
 
@@ -508,8 +506,8 @@ Photodump.prototype.saveAll = function(){
 // via http://stackoverflow.com/questions/3971841
 Photodump.Image.prototype.getDimensions = function(maxWidth, maxHeight, img){
     var ratio =  Math.min(maxWidth / img.width, maxHeight / img.height),
-        width = img.width * ratio,
-        height = img.height * ratio;
+        width = Math.round(img.width * ratio),
+        height = Math.round(img.height * ratio);
 
     return { width: width, height: height };
 }
