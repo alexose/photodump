@@ -18,28 +18,36 @@ const canvas = document.createElement('canvas');
 function handleDragDrop(name, e) {
     e.preventDefault();
     e.stopPropagation();
-    if (name === 'drop') handlefiles(e.dataTransfer.files);
+    if (name === 'drop') handleFiles(e.dataTransfer.files);
 }
 
 function handleFiles(files) {
     Array.prototype.forEach.call(files, d => {
-        const converted = convert(d);
+        convert(d, data => {
+            upload(data);
+        });
     });
-
-    // Add upload into queue;
 }
 
 // Convert image into webp format
 // TODO: would be cool to do this in a web worker
-function convert(d) {
+function convert(d, cb) {
+
     // Draw image to canvas
     var ctx = canvas.getContext('2d');
-    var webp = canvas.toDataURL("image/webp");
+    var img = new Image;
+    img.onload = function() {
+        ctx.drawImage(img, 20, 20);
+        const webp = canvas.toDataURL("image/webp");
+        cb(webp);
+    }
+    img.src = URL.createObjectURL(d);
 }
 
 // Upload to S3
+// TODO: queue
 function upload(file) {
-
+    console.log(file);
 }
 
 // via http://stackoverflow.com/questions/105034
