@@ -19,7 +19,7 @@ const s3 = new AWS.S3({
 });
 
 // Create HTTP server
-// Most of the heavy lifting happens below, via the websocket server
+// Note that most of the heavy lifting happens via websocket, not here
 http.createServer(function ({url}, res) {
     switch(url){ 
         case '/':
@@ -67,20 +67,21 @@ const wss = new ws.Server({
 });
 
 const commands = {
-    upload: ({ hash, file }) => {
+    upload: ({ hash, file }, ws) => {
         const dir = hash.split('#').join('');
         
         // Split image into various sizes
         
         // Store them in the cloud somewhere
-        persist(file, dir);
+        persist(file, dir, ws);
     },
     list: ({ hash }, ws) => {
         const prefix = hash.split('#').join('');
         list(prefix, results => {
+            log(results);
             ws.send(JSON.stringify({
                 command: 'list',
-                results: results.map(d => d.Key)
+                results: results.map(d => 'https://photodump-aws.s3.us-west-2.amazonaws.com/' + d.Key)
             }));
         });
     }
@@ -100,7 +101,7 @@ wss.on('connection', ws => {
 });
 
 // Persist data in S3
-function persist(file, dir) {
+function persist(file, dir, ws) {
     const params = {
         Bucket: config.bucket,
         Key: `${dir}/${createuuid()}.webp`,
@@ -114,7 +115,11 @@ function persist(file, dir) {
         if (err) {
             throw err;
         }
-        console.log(`File uploaded successfully. ${data.Location}`);
+        ws.send(JSON.stringify({
+            command: 'add',
+            src: data.Location,
+        }));
+        log(`File uploaded successfully. ${data.Location}`);
     });
 }
 
@@ -123,7 +128,8 @@ function list(prefix, cb) {
     const params = { 
         Bucket: config.bucket,
         Prefix: prefix,
-    }
+    };
+
     s3.listObjects(params, (err, data) => {
         if (err) {
             throw err;

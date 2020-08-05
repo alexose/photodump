@@ -10,9 +10,7 @@ const hash = document.location.hash || createuuid();
 const ws = new WebSocket('ws://localhost:8083');
 
 const commands = {
-    list: ({ results }) => {
-        console.log(results;
-    }
+    list: ({ results }) => display(results),
 }
 
 // Get all images in dump
@@ -23,6 +21,7 @@ ws.onmessage = ({ data }) => {
     if (commands[command]){
         commands[command](obj);
     }
+    console.log(obj);
 }
 
 // Create necessary elements;
@@ -96,6 +95,21 @@ function send(str, callback) {
             }
         }, 100);
     }
+}
+
+// TODO: virtual dom?
+function display(urls) {
+    urls.forEach(url => {
+        const arr = url.split('/');
+        const file = arr.pop();
+        const img = document.getElementById(file);
+        if (!img) {
+            const newImg = document.createElement('img');
+            newImg.id = file;
+            newImg.src = url;
+            element.appendChild(newImg);      
+        }
+    });
 }
 
 // via http://stackoverflow.com/questions/105034
