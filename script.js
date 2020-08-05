@@ -9,6 +9,13 @@ const hash = document.location.hash || createuuid();
 // Create Websocket
 const ws = new WebSocket('ws://localhost:8083');
 
+// Get all images in dump
+ws.onopen = () => ws.send(JSON.stringify({ command: 'list', hash }));
+ws.onmessage = ({ data }) => {
+    const obj = JSON.parse(data);
+    console.log(obj);
+}
+
 // Create necessary elements;
 const element = document.getElementById('application');
 const canvas = document.createElement('canvas');
@@ -54,7 +61,7 @@ function convert(d, cb) {
 function upload(file) {
 
     // TODO: send blob instead of string
-    const str = JSON.stringify({ hash, file });
+    const str = JSON.stringify({ command: 'upload', hash, file });
     send(str, function(remaining){
         if (remaining === 0){
            console.log('file sent');
@@ -67,8 +74,8 @@ function upload(file) {
 }
 
 // via https://stackoverflow.com/questions/43725260
-function send(binMsg, callback) {
-    ws.send(binMsg);
+function send(str, callback) {
+    ws.send(str);
 
     if (callback != null) {
         var interval = setInterval(function () {

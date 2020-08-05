@@ -66,15 +66,34 @@ const wss = new ws.Server({
     log(`Sockets enabled at ws://${host}:${wsport}`)
 });
 
+const commands = {
+    upload: ({ hash, file }) => {
+        const dir = hash.split('#').join('');
+        
+        // Split image into various sizes
+        
+        // Store them in the cloud somewhere
+        persist(file, dir);
+    },
+    list: ({ hash }, ws) => {
+        const prefix = hash.split('#').join('');
+        list(prefix, results => {
+            ws.send(JSON.stringify({
+                command: 'list',
+                results: results.map(d => d.Key)
+            }));
+        });
+    }
+}
+
 wss.on('connection', ws => {
 
-    // Receive upload
     ws.on('message', str => {
         const obj = JSON.parse(str);
-        const dir = obj.hash.split('#').join('');
-        // Split image into various sizes
-        // Store them in the cloud somewhere
-        persist(obj.file, dir);
+        const { command } = obj;
+        if (commands[command]) { 
+            commands[command](obj, ws);
+        }
     });
 
     ws.send('Welcome to Photodump!');
@@ -91,12 +110,26 @@ function persist(file, dir) {
         ACL:'public-read', // TODO: no
     };
 
-    s3.upload(params, function(err, data) {
+    s3.upload(params, (err, data) => {
         if (err) {
             throw err;
         }
         console.log(`File uploaded successfully. ${data.Location}`);
     });
+}
+
+// Get all image URLs in a specified bucket
+function list(prefix, cb) {
+    const params = { 
+        Bucket: config.bucket,
+        Prefix: prefix,
+    }
+    s3.listObjects(params, (err, data) => {
+        if (err) {
+            throw err;
+        }
+        cb(data.Contents);
+    })
 }
 
 // via http://stackoverflow.com/questions/105034
