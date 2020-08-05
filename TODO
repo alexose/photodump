@@ -1,3 +1,6 @@
 TODO:
     * Client queuing for uploads
+    * Thumb
+    * 'Progress bar' style downloads
     * Direct-upload-to-s3
+    * Signed urls from s3
