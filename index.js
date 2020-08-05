@@ -78,7 +78,6 @@ const commands = {
     list: ({ hash }, ws) => {
         const prefix = hash.split('#').join('');
         list(prefix, results => {
-            log(results);
             ws.send(JSON.stringify({
                 command: 'list',
                 results: results.map(d => 'https://photodump-aws.s3.us-west-2.amazonaws.com/' + d.Key)
