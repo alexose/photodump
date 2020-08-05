@@ -9,11 +9,20 @@ const hash = document.location.hash || createuuid();
 // Create Websocket
 const ws = new WebSocket('ws://localhost:8083');
 
+const commands = {
+    list: ({ results }) => {
+        console.log(results;
+    }
+}
+
 // Get all images in dump
 ws.onopen = () => ws.send(JSON.stringify({ command: 'list', hash }));
 ws.onmessage = ({ data }) => {
     const obj = JSON.parse(data);
-    console.log(obj);
+    const { command } = obj;
+    if (commands[command]){
+        commands[command](obj);
+    }
 }
 
 // Create necessary elements;

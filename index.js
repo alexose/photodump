@@ -96,7 +96,7 @@ wss.on('connection', ws => {
         }
     });
 
-    ws.send('Welcome to Photodump!');
+    ws.send(JSON.stringify({ command: 'welcome', text: 'Welcome to Photodump!' }));
 });
 
 // Persist data in S3
