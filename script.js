@@ -11,6 +11,7 @@ const ws = new WebSocket('ws://localhost:8083');
 
 const commands = {
     list: ({ results }) => display(results),
+    add: ({ src }) => display([src]),
 }
 
 // Get all images in dump
@@ -99,7 +100,6 @@ function send(str, callback) {
     }
 }
 
-// TODO: virtual dom?
 function display(urls) {
     urls.forEach(url => {
         const arr = url.split('/');
