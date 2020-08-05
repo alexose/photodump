@@ -1,4 +1,5 @@
 module.exports = {
-    accessKeyId: ID,
-    secretAccessKey: SECRET
+    accessKeyId: 'ID',
+    secretAccessKey: 'SECRET',
+    bucket: 'BUCKET_NAME'
 }
