@@ -1,0 +1,25 @@
+{
+  "name": "photodump",
+  "version": "1.0.0",
+  "description": "Photodump is a simple, realtime photo sharing application tuned to an unreasonable degree of efficiency.",
+  "main": "script.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexose/photodump.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexose/photodump/issues"
+  },
+  "homepage": "https://github.com/alexose/photodump#readme",
+  "dependencies": {
+    "ws": "^7.3.1"
+  }
+}

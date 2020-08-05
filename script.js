@@ -6,6 +6,9 @@
 // Handle hash
 const hash = document.location.hash || createuuid();
 
+// Create Websocket
+const ws = new WebSocket('ws://localhost:8083');
+
 // Create necessary elements;
 const element = document.getElementById('application');
 const canvas = document.createElement('canvas');
@@ -46,10 +49,10 @@ function convert(d, cb) {
     img.src = URL.createObjectURL(d);
 }
 
-// Upload to S3
+// Upload to server 
 // TODO: queue
 function upload(file) {
-    fetch(`${aws_url}/test/lol.png`, {
+    fetch(`/api/${hash}/upload`, {
             method: 'POST',
             mode: 'cors',
             body: file
@@ -64,5 +67,7 @@ function createuuid() {
     document.location.hash = hash;
     return hash;
 }
+
+
 
 })();
