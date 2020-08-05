@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/alexose/photodump#readme",
   "dependencies": {
+    "aws-sdk": "^2.727.1",
     "ws": "^7.3.1"
   }
 }
