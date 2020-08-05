@@ -69,7 +69,6 @@ const wss = new ws.Server({
 const commands = {
     upload: ({ hash, file }, ws) => {
         const dir = hash.split('#').join('');
-        
         // Split image into various sizes
         
         // Store them in the cloud somewhere
@@ -100,11 +99,12 @@ wss.on('connection', ws => {
 });
 
 // Persist data in S3
-function persist(file, dir, ws) {
+function persist(image, dir, ws) {
+    const buf = new Buffer(image.replace(/^data:image\/\w+;base64,/, ""),'base64');
     const params = {
         Bucket: config.bucket,
         Key: `${dir}/${createuuid()}.webp`,
-        Body: file,
+        Body: buf,
         ContentEncoding: 'base64',
         ContentType: 'image/webp',
         ACL:'public-read', // TODO: no
@@ -140,4 +140,23 @@ function list(prefix, cb) {
 // via http://stackoverflow.com/questions/105034
 function createuuid() {
     return Math.random().toString(36).substring(2, 7) + Math.random().toString(36).substring(2, 7);
+}
+
+// via https://stackoverflow.com/questions/6850276
+function dataURItoBlob(dataURI) {
+    // convert base64 to raw binary data held in a string
+    // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+    var byteString = atob(dataURI.split(',')[1]);
+
+    // separate out the mime component
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+    // write the bytes of the string to an ArrayBuffer
+    var ab = new ArrayBuffer(byteString.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    
+    return new Blob([ab], {type: mimeString});
 }

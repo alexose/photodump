@@ -53,11 +53,13 @@ function handleFiles(files) {
 // TODO: would be cool to do this in a web worker
 function convert(d, cb) {
 
-    // Draw image to canvas
+    // Draw image to offscreen canvas
     var ctx = canvas.getContext('2d');
     var img = new Image;
     img.onload = function() {
-        ctx.drawImage(img, 20, 20);
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
         const webp = canvas.toDataURL("image/webp");
         cb(webp);
     }
