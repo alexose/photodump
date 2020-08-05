@@ -10,6 +10,8 @@ const hash = document.location.hash || createuuid();
 const element = document.getElementById('application');
 const canvas = document.createElement('canvas');
 
+const aws_url = "https://photodump-aws.s3.amazonaws.com";
+
 // Handle drag and drop
 ['dragover','drop','dragleave'].forEach(d => { 
     element.addEventListener(d, e => handleDragDrop(d, e)); 
@@ -47,7 +49,13 @@ function convert(d, cb) {
 // Upload to S3
 // TODO: queue
 function upload(file) {
-    console.log(file);
+    fetch(`${aws_url}/test/lol.png`, {
+            method: 'POST',
+            mode: 'cors',
+            body: file
+        })
+        .then(data => console.log(data))
+        .catch(error => console.error(error));
 }
 
 // via http://stackoverflow.com/questions/105034
