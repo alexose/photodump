@@ -52,13 +52,34 @@ function convert(d, cb) {
 // Upload to server 
 // TODO: queue
 function upload(file) {
-    fetch(`/api/${hash}/upload`, {
-            method: 'POST',
-            mode: 'cors',
-            body: file
-        })
-        .then(data => console.log(data))
-        .catch(error => console.error(error));
+
+    // TODO: send blob instead of string
+    const str = JSON.stringify({ hash, file });
+    send(str, function(remaining){
+        if (remaining === 0){
+           console.log('file sent');
+        } else {
+           const loaded = file.size - remaining;
+           const percentage = Math.round((loaded * 100) / file.size );
+           console.log(percentage);
+        }
+    });
+}
+
+// via https://stackoverflow.com/questions/43725260
+function send(binMsg, callback) {
+    ws.send(binMsg);
+
+    if (callback != null) {
+        var interval = setInterval(function () {
+            if (ws.bufferedAmount > 0) {
+                callback(ws.bufferedAmount);
+            } else {
+                callback(0)
+                clearInterval(interval);
+            }
+        }, 100);
+    }
 }
 
 // via http://stackoverflow.com/questions/105034
@@ -67,7 +88,5 @@ function createuuid() {
     document.location.hash = hash;
     return hash;
 }
-
-
 
 })();
