@@ -18,6 +18,9 @@ const s3 = new AWS.S3({
     secretAccessKey: config.secretAccessKey
 });
 
+const cache = {};
+const timeouts = {};
+
 // Create HTTP server
 // Note that most of the heavy lifting happens via websocket, not here
 http.createServer(function ({url}, res) {
@@ -91,20 +94,39 @@ const commands = {
 
     upload_thumbnail: ({ hash, file }, ws) => {
         const dir = hash.split('#').join('');
-        const params = {
-            Key: `${dir}/thumbs.json`, 
-            Body: JSON.stringify(file),
-            ContentType: 'text/json',
-        };
-
-        console.log(file);
-
         ws.send(JSON.stringify({
             command: 'add',
             data: file
         }));
 
-        // persist(params, ws);
+        // Store in memory
+        if (!cache[dir]) cache[dir] = {};
+        cache[dir][file.name] = file;
+
+        // Persist to S3 after one second of inactivity
+        // Yes, this should happen in redis or something
+        clearTimeout(timeouts[dir]);
+        timeouts[dir] = setTimeout(() => {
+            s3.getObject({ 
+                Bucket: config.bucket,
+                Key: `${hash.split('#').join('')}/thumbs.json`,
+            }, (err, data) => {
+                let thumbs = {};
+                if (!err) {
+                    // Merge thumbs.json with cache
+                    thumbs = Object.assign(cache[dir], JSON.parse(data.Body.toString()));
+                }
+
+                // Persist
+                const params = {
+                    Key: `${dir}/thumbs.json`, 
+                    Body: JSON.stringify(thumbs),
+                    ContentType: 'text/json',
+                };
+                persist(params, ws);
+            })
+
+        }, 1000);
     },
 
     list: ({ hash }, ws) => {
