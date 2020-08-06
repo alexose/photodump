@@ -13,7 +13,7 @@ const ws = new WebSocket('ws://localhost:8083');
 
 const commands = {
     list: ({ data }) => display(data),
-    add: ({ src }) => display([src]),
+    add: ({ data }) => display(data),
 }
 
 // Get all images in dump
@@ -53,9 +53,17 @@ function handleFiles(files) {
                 src: data
             };
             if (Object.keys(thumbnails).length == files.length) {
-                upload('thumbnails', thumbnails, () => {
-                    next();
-                });
+
+                // Rapid-fire upload thumbnails to the server
+                const arr = Object.keys(thumbnails);
+                
+                (function iterate(i) {
+                    if (thumbnails[i]) {
+                        upload('thumbnail', thumbnails[i], () => iterate(i+1)); 
+                    } else {
+                        next();
+                    }
+                })(0);
             }
         });
     });

@@ -89,7 +89,7 @@ const commands = {
         });
     },
 
-    upload_thumbnails: ({ hash, file }, ws) => {
+    upload_thumbnail: ({ hash, file }, ws) => {
         const dir = hash.split('#').join('');
         const params = {
             Key: `${dir}/thumbs.json`, 
@@ -97,7 +97,14 @@ const commands = {
             ContentType: 'text/json',
         };
 
-        persist(params, ws);
+        console.log(file);
+
+        ws.send(JSON.stringify({
+            command: 'add',
+            data: file
+        }));
+
+        // persist(params, ws);
     },
 
     list: ({ hash }, ws) => {
