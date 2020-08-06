@@ -101,12 +101,21 @@ const commands = {
     },
 
     list: ({ hash }, ws) => {
-        const prefix = hash.split('#').join('');
-        list(prefix, results => {
-            ws.send(JSON.stringify({
-                command: 'list',
-                results: results.map(d => 'https://photodump-aws.s3.us-west-2.amazonaws.com/' + d.Key)
-            }));
+        s3.getObject({ 
+            Bucket: config.bucket,
+            Key: `${hash.split('#').join('')}/thumbs.json`,
+        }, (err, data) => {
+            if (!err) {
+                const obj = JSON.parse(data.Body.toString());
+
+                // Rapid-fire thumbnails off to the client
+                Object.keys(obj).forEach(key => {
+                    ws.send(JSON.stringify({
+                        command: 'list',
+                        data: obj[key]
+                    }));
+                });
+            }
         });
     }
 }
