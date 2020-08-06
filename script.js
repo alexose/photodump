@@ -47,7 +47,7 @@ function handleFiles(files) {
     // First, generate & upload thumbnails
     const thumbnails = {};
     Array.prototype.forEach.call(files, (d, i) => {
-        convert(d, 300, 300, data => {
+        convert(d, 450, 450, data => {
             thumbnails[i] = {
                 name: md5(d.name + d.lastModified + data), 
                 src: data
@@ -140,6 +140,7 @@ function display(data) {
         const newImg = document.createElement('img');
         newImg.id = name;
         newImg.src = src;
+        newImg.className = 'thumb';
         element.appendChild(newImg);      
     }
 }
