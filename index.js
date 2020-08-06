@@ -67,13 +67,39 @@ const wss = new ws.Server({
 });
 
 const commands = {
-    upload: ({ hash, file }, ws) => {
+    upload_image: ({ hash, file }, ws) => {
         const dir = hash.split('#').join('');
-        // Split image into various sizes
-        
-        // Store them in the cloud somewhere
-        persist(file, dir, ws);
+        const data = file.replace(/^data:image\/\w+;base64,/, '');
+        const buf = new Buffer(data, 'base64');
+
+        const params = {
+            Key: `${dir}/${createuuid()}.webp`,
+            Body: buf,
+            ContentEncoding: 'base64',
+            ContentType: 'image/webp',
+        };
+
+        persist(params, ws, loc => {
+
+            // Notify that a file was added
+            ws.send(JSON.stringify({
+                command: 'add',
+                src: loc
+            }));
+        });
     },
+
+    upload_thumbnails: ({ hash, file }, ws) => {
+        const dir = hash.split('#').join('');
+        const params = {
+            Key: `${dir}/thumbs.json`, 
+            Body: JSON.stringify(file),
+            ContentType: 'text/json',
+        };
+
+        persist(params, ws);
+    },
+
     list: ({ hash }, ws) => {
         const prefix = hash.split('#').join('');
         list(prefix, results => {
@@ -99,25 +125,22 @@ wss.on('connection', ws => {
 });
 
 // Persist data in S3
-function persist(image, dir, ws) {
-    const buf = new Buffer(image.replace(/^data:image\/\w+;base64,/, ""),'base64');
-    const params = {
+function persist(obj, ws, cb) {
+    
+    const defaults = {
         Bucket: config.bucket,
-        Key: `${dir}/${createuuid()}.webp`,
-        Body: buf,
-        ContentEncoding: 'base64',
-        ContentType: 'image/webp',
         ACL:'public-read', // TODO: no
-    };
+    }
+
+    const params = Object.assign(defaults, obj);
 
     s3.upload(params, (err, data) => {
         if (err) {
             throw err;
         }
-        ws.send(JSON.stringify({
-            command: 'add',
-            src: data.Location,
-        }));
+        if (typeof cb === 'function') {
+            cb(data.Location);
+        }
         log(`File uploaded successfully. ${data.Location}`);
     });
 }

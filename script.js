@@ -43,24 +43,44 @@ function handleDragDrop(name, e) {
 }
 
 function handleFiles(files) {
-    Array.prototype.forEach.call(files, d => {
-        convert(d, data => {
-            upload(data);
+
+    // First, generate & upload thumbnails
+    const thumbnails = {};
+    Array.prototype.forEach.call(files, (d, i) => {
+        convert(d, 300, 300, data => {
+            thumbnails[i] = data;
+            if (Object.keys(thumbnails).length == files.length) {
+                upload('thumbnails', thumbnails, () => {
+                    next();
+                });
+            }
         });
     });
+
+    // Next, convert and upload the resized originals
+    function next() {
+        console.log('done');
+    }
+
+    // TODO: If requested, upload the originals
 }
 
 // Convert image into webp format
 // TODO: would be cool to do this in a web worker
-function convert(d, cb, w, h) {
+function convert(d, w, h, cb) {
 
     // Draw image to offscreen canvas
     var ctx = canvas.getContext('2d');
     var img = new Image;
     img.onload = function() {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+
+        // Resize as necessary
+        let ratio = w && h ? Math.min(w / img.width, h / img.height) : 1; 
+
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const webp = canvas.toDataURL("image/webp");
         cb(webp);
     }
@@ -69,17 +89,19 @@ function convert(d, cb, w, h) {
 
 // Upload to server 
 // TODO: queue
-function upload(file) {
+function upload(type, file, cb) {
 
     // TODO: send blob instead of string
-    const str = JSON.stringify({ command: 'upload', hash, file });
+    const str = JSON.stringify({ command: 'upload_' + type, hash, file });
     send(str, function(remaining){
         if (remaining === 0){
-           console.log('file sent');
+            if (typeof cb === 'function') {
+                cb();
+            }
         } else {
-           const loaded = file.size - remaining;
-           const percentage = Math.round((loaded * 100) / file.size );
-           console.log(percentage);
+            const loaded = file.size - remaining;
+            const percentage = Math.round((loaded * 100) / file.size );
+            console.log(percentage);
         }
     });
 }
@@ -104,12 +126,28 @@ function display(urls) {
     urls.forEach(url => {
         const arr = url.split('/');
         const file = arr.pop();
-        const img = document.getElementById(file);
-        if (!img) {
-            const newImg = document.createElement('img');
-            newImg.id = file;
-            newImg.src = url;
-            element.appendChild(newImg);      
+
+        if (file === 'thumbs.json') {
+            // Fetch thumbs.json and parse
+            fetch(url)
+                .then(res=> res.json())
+                .then((thumbs) => {
+                    console.log(thumbs);
+                    Object.keys(thumbs).forEach(key => {
+                        const newImg = document.createElement('img');
+                        newImg.src = thumbs[key];
+                        element.appendChild(newImg);      
+                    });
+                });
+
+        } else {
+            const img = document.getElementById(file);
+            if (!img) {
+                const newImg = document.createElement('img');
+                newImg.id = file;
+                newImg.src = url;
+                element.appendChild(newImg);      
+            }
         }
     });
 }
