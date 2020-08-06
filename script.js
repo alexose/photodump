@@ -3,6 +3,8 @@
 
 (() => {
 
+const aws_url = "https://photodump-aws.s3.amazonaws.com";
+
 // Handle hash
 const hash = document.location.hash || createuuid();
 
@@ -29,8 +31,6 @@ ws.onmessage = ({ data }) => {
 const element = document.getElementById('application');
 const canvas = document.createElement('canvas');
 
-const aws_url = "https://photodump-aws.s3.amazonaws.com";
-
 // Handle drag and drop
 ['dragover','drop','dragleave'].forEach(d => { 
     element.addEventListener(d, e => handleDragDrop(d, e)); 
@@ -52,7 +52,7 @@ function handleFiles(files) {
 
 // Convert image into webp format
 // TODO: would be cool to do this in a web worker
-function convert(d, cb) {
+function convert(d, cb, w, h) {
 
     // Draw image to offscreen canvas
     var ctx = canvas.getContext('2d');
