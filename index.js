@@ -20,6 +20,7 @@ const s3 = new AWS.S3({
 
 const cache = {};
 const timeouts = {};
+const partials = {};
 
 // Create HTTP server
 // Note that most of the heavy lifting happens via websocket, not here
@@ -70,26 +71,22 @@ const wss = new ws.Server({
 });
 
 const commands = {
-    upload_image: ({ hash, file }, ws) => {
+    upload_chunk: ({ hash, name, total, chunk }, ws) => {
         const dir = hash.split('#').join('');
-        const data = file.replace(/^data:image\/\w+;base64,/, '');
-        const buf = new Buffer(data, 'base64');
 
-        const params = {
-            Key: `${dir}/${createuuid()}.webp`,
-            Body: buf,
-            ContentEncoding: 'base64',
-            ContentType: 'image/webp',
-        };
+        if (!partials[dir]) partials[dir] = {}; 
+        if (!partials[dir][name]) partials[dir][name] = [];
 
-        persist(params, ws, loc => {
+        // Casually assuming these can't come in out of order...
+        partials[dir][name].push(chunk);
+        const length = partials[dir][name].length;
+        if (length === total) {
+            // persist(params, ws, loc => {});
+            log('File added');
+        }
 
-            // Notify that a file was added
-            ws.send(JSON.stringify({
-                command: 'add',
-                src: loc
-            }));
-        });
+        ws.send(JSON.stringify({ command: 'progress', hash, name, complete: length / total * 100 }));
+
     },
 
     upload_thumbnail: ({ hash, file }, ws) => {

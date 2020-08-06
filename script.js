@@ -14,6 +14,7 @@ const ws = new WebSocket('ws://localhost:8083');
 const commands = {
     list: ({ data }) => display(data),
     add: ({ data }) => display(data),
+    progress: (data) => progress(data)
 }
 
 // Get all images in dump
@@ -46,7 +47,9 @@ function handleFiles(files) {
 
     // First, generate & upload thumbnails
     const thumbnails = {};
-    Array.prototype.forEach.call(files, (d, i) => {
+    const arr = Array.from(files);
+
+    arr.forEach((d, i) => {
         convert(d, 450, 450, data => {
             thumbnails[i] = {
                 name: md5(d.name + d.lastModified + data), 
@@ -70,14 +73,53 @@ function handleFiles(files) {
 
     // Next, convert and upload the resized originals
     function next() {
-        console.log('done');
+        (function iterate(i) {
+            const file = arr[i];
+            if (file) {
+                chunkedUpload(file, thumbnails[i].name, () => {
+                    iterate(i+1);
+                });
+            } else {
+                console.log('Done!');
+            }
+        })(0);
     }
 
     // TODO: If requested, upload the originals
 }
 
+// Divide a file into chunks and upload them sequentially to the server
+function chunkedUpload(file, name, cb) {
+
+    // This should scale based on the client's bandwidth, I think
+    const size = 1024 * 100;
+    const total = Math.ceil(file.size / size);
+    const reader = new FileReader();
+
+    (function iterate(i) {
+        const chunk = file.slice(i, i+size);
+        if (chunk.size) {
+            reader.readAsDataURL(chunk);
+            reader.onloadend = () => {
+                send(JSON.stringify({
+                   command: 'upload_chunk',
+                   name,
+                   hash,
+                   total,
+                   chunk: reader.result.split(',')[1]
+                }), () => {
+                    iterate(i += size)
+                });
+            };
+        } else {
+            cb();
+        }
+    })(0);
+}
+
 // Convert image into webp format
 // TODO: would be cool to do this in a web worker
+// TODO: how to handle massively huge images?
 function convert(d, w, h, cb) {
 
     // Draw image to offscreen canvas
@@ -138,6 +180,7 @@ function display(data) {
     const img = document.getElementById(name);
     if (!img) {
         const container = document.createElement('div');
+        container.id = name;
         container.className = 'thumb';
 
         const shade = document.createElement('div');
@@ -146,13 +189,18 @@ function display(data) {
         container.appendChild(shade);
         
         const image = document.createElement('img');
-        image.id = name;
         image.src = src;
         container.appendChild(image);
 
         
         element.appendChild(container);      
     }
+}
+
+// Handle progress
+function progress(data) {
+    const thumb = document.getElementById(data.name);
+    thumb.children[0].style.width = data.complete + '%';
 }
 
 // via http://stackoverflow.com/questions/105034
