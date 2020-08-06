@@ -94,10 +94,9 @@ const commands = {
 
     upload_thumbnail: ({ hash, file }, ws) => {
         const dir = hash.split('#').join('');
-        ws.send(JSON.stringify({
-            command: 'add',
-            data: file
-        }));
+        const data = Object.assign({ complete: 0 }, file);
+
+        ws.send(JSON.stringify({ command: 'add', data }));
 
         // Store in memory
         if (!cache[dir]) cache[dir] = {};

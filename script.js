@@ -134,14 +134,23 @@ function send(str, callback) {
 }
 
 function display(data) {
-    const { name, url, src } = data;
+    const { name, url, complete, src } = data;
     const img = document.getElementById(name);
     if (!img) {
-        const newImg = document.createElement('img');
-        newImg.id = name;
-        newImg.src = src;
-        newImg.className = 'thumb';
-        element.appendChild(newImg);      
+        const container = document.createElement('div');
+        container.className = 'thumb';
+
+        const image = document.createElement('img');
+        image.id = name;
+        image.src = src;
+        container.appendChild(image);
+
+        const shade = document.createElement('div');
+        shade.className = 'shade';
+        shade.style.width = (100 - complete) + '%';
+        container.appendChild(shade);
+        
+        element.appendChild(container);      
     }
 }
 

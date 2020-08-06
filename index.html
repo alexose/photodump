@@ -17,96 +17,16 @@ body {
     cursor: pointer;
 }
 
-#upload, #application{
-    position: absolute;
-    top:0;right:0;bottom:0;left:0;
-    display:block;
-    width:100%;
-    height:100%;
-    z-index:1;
-}
-
-#upload{
-    opacity:0;
-    z-index:1;
-}
-
-#main{
-    pointer-events: all;
-}
-
-ul {
-    margin: 0; padding: 0;
-    list-style: none;
-    width: 100%;
-    overflow: hidden; /* http://stackoverflow.com/questions/12783064/ */
-}
-
-li {
-    margin: 0;
-    float: left;
-}
-
-li.wrap{
-    position: relative;
-    margin: 20px;
-}
-
 .thumb {
-    display: block;
-    text-align: center;
-    max-height: 200px;
-    max-width: 300px;
-    margin: 10px 5px;
-    cursor: pointer;
-    position: relative;
+    display: inline-block;
 }
 
-.thumb img {
+.shade {
+    opacity: 0.1;
     height: 100%;
-    width: 100%;
-    object-fit: contain;
-}
-
-.thumb .shade {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.4);
+    background: #000;
     pointer-events: none;
-}
-
-h1 {
-    position: absolute;
-    top:100px;
-    left:0;
-    right:0;
-    color: #777;
-    text-align: center;
-}
-
-.dragover {
-    color: rgba(255,255,255,0.5)
-}
-
-#box {
-    position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}
-
-.modal {
-    max-width: 90%;
-    max-height: 90%;
-}
-
-.modal img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    pointer-events: auto;
+    pointer: cursor;
 }
 
 </style>
