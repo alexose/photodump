@@ -100,7 +100,7 @@ const commands = {
 
         // Store in memory
         if (!cache[dir]) cache[dir] = {};
-        cache[dir][file.name] = file;
+        cache[dir][file.name] = data;
 
         // Persist to S3 after one second of inactivity
         // Yes, this should happen in redis or something

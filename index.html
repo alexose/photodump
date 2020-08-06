@@ -17,16 +17,28 @@ body {
     cursor: pointer;
 }
 
+#application{
+    position: absolute;
+    top:0;right:0;bottom:0;left:0;
+    display:block;
+    width:100%;
+    height:100%;
+    z-index:1;
+}
+
 .thumb {
     display: inline-block;
+    position: relative;
 }
 
 .shade {
-    opacity: 0.1;
+    opacity: 0.2;
     height: 100%;
     background: #000;
     pointer-events: none;
     pointer: cursor;
+    position: absolute;
+    left: 0;
 }
 
 </style>

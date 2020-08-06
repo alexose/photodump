@@ -140,15 +140,16 @@ function display(data) {
         const container = document.createElement('div');
         container.className = 'thumb';
 
+        const shade = document.createElement('div');
+        shade.className = 'shade';
+        shade.style.width = (100 - complete) + '%';
+        container.appendChild(shade);
+        
         const image = document.createElement('img');
         image.id = name;
         image.src = src;
         container.appendChild(image);
 
-        const shade = document.createElement('div');
-        shade.className = 'shade';
-        shade.style.width = (100 - complete) + '%';
-        container.appendChild(shade);
         
         element.appendChild(container);      
     }
