@@ -14,7 +14,8 @@ const ws = new WebSocket('ws://localhost:8083');
 const commands = {
     list: ({ data }) => display(data),
     add: ({ data }) => display(data),
-    progress: (data) => progress(data)
+    progress: (data) => progress(data),
+    welcome: () => welcome(),
 }
 
 // Get all images in dump
@@ -175,7 +176,13 @@ function send(str, callback) {
 
 function display(data) {
     const { name, url, complete, src } = data;
-    const img = document.getElementById(name);
+    
+    const welcome = document.getElementById('welcome');
+    if (welcome) {
+        welcome.remove();
+    }
+   
+   const img = document.getElementById(name);
     if (!img) {
         const container = document.createElement('div');
         const dir = hash.split('#').join('');
@@ -208,6 +215,24 @@ function display(data) {
 function progress(data) {
     const thumb = document.getElementById(data.name);
     thumb.children[0].style.width = (100 - data.complete) + '%';
+}
+
+// Create a friendly and attractive welcome screen
+function welcome() {
+    const tmpl = `
+        <div class="welcome" id="welcome">
+            <div class="welcome-inner">
+                <h1>Welcome to Photodump!</h1>
+                <p>
+                    Photodump is the fastest and easiest way to share photos with friends.
+                </p> 
+                <p>
+                    Drag and drop your photos, or <a href="#">click here to upload</a>
+                </p>
+            </div>
+        </div>
+    `;
+    element.insertAdjacentHTML('afterEnd', tmpl);
 }
 
 // via http://stackoverflow.com/questions/105034

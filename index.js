@@ -143,7 +143,9 @@ const commands = {
             Bucket: config.bucket,
             Key: `${hash.split('#').join('')}/thumbs.json`,
         }, (err, data) => {
-            if (!err) {
+            if (err) {
+                ws.send(JSON.stringify({ command: 'welcome', text: 'Welcome to Photodump!' }));
+            } else { 
                 const obj = JSON.parse(data.Body.toString());
 
                 // Rapid-fire thumbnails off to the client
@@ -157,7 +159,6 @@ const commands = {
 }
 
 wss.on('connection', ws => {
-
     ws.on('message', str => {
         const obj = JSON.parse(str);
         const { command } = obj;
@@ -165,8 +166,6 @@ wss.on('connection', ws => {
             commands[command](obj, ws);
         }
     });
-
-    ws.send(JSON.stringify({ command: 'welcome', text: 'Welcome to Photodump!' }));
 });
 
 // Persist data in S3

@@ -4,3 +4,4 @@ TODO:
     * 'Progress bar' style downloads
     * Direct-upload-to-s3
     * Signed urls from s3
+    * Detect macos users who are dragging icloud files (macOS user? read this)
