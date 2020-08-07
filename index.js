@@ -81,8 +81,14 @@ const commands = {
         partials[dir][name].push(chunk);
         const length = partials[dir][name].length;
         if (length === total) {
-            // persist(params, ws, loc => {});
-            log('File added');
+
+            persist({
+                Key: `${dir}/${name}.webp`,
+
+            }, ws, loc => {
+                log('File added');
+            });
+
         }
 
         ws.send(JSON.stringify({ command: 'progress', hash, name, complete: length / total * 100 }));
