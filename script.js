@@ -76,8 +76,10 @@ function handleFiles(files) {
         (function iterate(i) {
             const file = arr[i];
             if (file) {
-                chunkedUpload(file, thumbnails[i].name, () => {
-                    iterate(i+1);
+                convert(file, 2000, 2000, data => {
+                    chunkedUpload(data.split(',')[1], thumbnails[i].name, () => {
+                        iterate(i+1);
+                    });
                 });
             } else {
                 console.log('Done!');
@@ -89,29 +91,24 @@ function handleFiles(files) {
 }
 
 // Divide a file into chunks and upload them sequentially to the server
-function chunkedUpload(file, name, cb) {
+function chunkedUpload(str, name, cb) {
 
     // This should scale based on the client's bandwidth, I think
     const size = 1024 * 100;
-    const total = Math.ceil(file.size / size);
-    const reader = new FileReader();
+    const total = Math.ceil(str.length / size);
 
     (function iterate(i) {
-        const chunk = file.slice(i, i+size);
-        if (chunk.size) {
-            reader.readAsDataURL(chunk);
-            reader.onloadend = () => {
-                console.log(reader.result.split(',')[1].length);
-                send(JSON.stringify({
-                   command: 'upload_chunk',
-                   name,
-                   hash,
-                   total,
-                   chunk: reader.result.split(',')[1]
-                }), () => {
-                    iterate(i += size)
-                });
-            };
+        const chunk = str.slice(i, i+size);
+        if (chunk.length) {
+            send(JSON.stringify({
+               command: 'upload_chunk',
+               name,
+               hash,
+               total,
+               chunk
+            }), () => {
+                iterate(i += size)
+            });
         } else {
             cb();
         }
