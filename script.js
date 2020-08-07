@@ -3,6 +3,7 @@
 
 (() => {
 
+let current;
 const aws_url = "https://photodump-aws.s3.amazonaws.com";
 
 // Handle hash
@@ -189,11 +190,6 @@ function display(data) {
 
         container.id = name;
         container.className = 'thumb';
-        container.onclick = e => {
-            showModal(e, `
-                <img class="fullsize" src=${aws_url}/${dir}/${name}.webp alt="${name}" />
-            `);
-        };
 
         const shade = document.createElement('div');
         shade.className = 'shade';
@@ -203,12 +199,28 @@ function display(data) {
         const image = document.createElement('img');
         image.src = src;
         image.style.opacity = 0;
+            
+        // Append image to DOM in order to allow preload
+        if (complete === 100) {
+            const full = document.createElement('img');
+            full.id = 'full-' + name;
+            full.src = `${aws_url}/${dir}/${name}.webp`;
+            full.className = 'full';
+            full.style.display = 'none';
+            document.body.appendChild(full);
+        
+            container.onclick = e => {
+                const open = document.getElementById('full-' + current);
+                if (open) open.style.display = 'none';
+                current = name;
+                full.style.display = 'block'; 
+            };
+        } else {
+            container.onclick = () => {};
+        }
         
         container.appendChild(image);
-        element.appendChild(container); 
-
-        // Allow preloading
-        (new Image()).src = src;
+        element.appendChild(container);
        
         setTimeout(() => {
             image.style.opacity = 1;
@@ -248,7 +260,6 @@ function help() {
         showModal(e, `<div>halp</div>`);
     }
     button.insertAdjacentHTML('beforeEnd', '<div>?</div>');
-
     element.after(button);
 }
 help();
@@ -270,6 +281,12 @@ function showModal(e, html) {
     curtain.appendChild(modal);
 
     element.after(curtain);
+}
+
+function showImage(e, name) {
+    e.stopPropagation();
+    const full = document.getElementById('full-' + name);
+    full.style.display = 'block';
 }
 
 // via http://stackoverflow.com/questions/105034
