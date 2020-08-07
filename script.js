@@ -190,7 +190,9 @@ function display(data) {
         container.id = name;
         container.className = 'thumb';
         container.onclick = e => {
-            window.location = `${aws_url}/${dir}/${name}.webp` 
+            showModal(e, `
+                <img class="fullsize" src=${aws_url}/${dir}/${name}.webp alt="${name}" />
+            `);
         };
 
         const shade = document.createElement('div');
@@ -203,7 +205,10 @@ function display(data) {
         image.style.opacity = 0;
         
         container.appendChild(image);
-        element.appendChild(container);      
+        element.appendChild(container); 
+
+        // Allow preloading
+        (new Image()).src = src;
        
         setTimeout(() => {
             image.style.opacity = 1;
@@ -253,7 +258,7 @@ function showModal(e, html) {
     const curtain = document.createElement('div');
     curtain.className = 'curtain';
     curtain.onclick = e => {
-        modal.remove();
+        curtain.remove();
     }
 
     const modal = document.createElement('div');
