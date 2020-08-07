@@ -10,7 +10,7 @@ const aws_url = "https://photodump-aws.s3.amazonaws.com";
 const hash = document.location.hash || createuuid();
 
 // Create Websocket
-const ws = new WebSocket('ws://localhost:8083');
+const ws = new WebSocket();
 
 const commands = {
     list: ({ data }) => display(data),
