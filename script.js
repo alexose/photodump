@@ -193,17 +193,21 @@ function display(data) {
         
         const image = document.createElement('img');
         image.src = src;
-        container.appendChild(image);
-
+        image.style.opacity = 0;
         
+        container.appendChild(image);
         element.appendChild(container);      
+       
+        setTimeout(() => {
+            image.style.opacity = 1;
+        }, 10);
     }
 }
 
 // Handle progress
 function progress(data) {
     const thumb = document.getElementById(data.name);
-    thumb.children[0].style.width = data.complete + '%';
+    thumb.children[0].style.width = (100 - data.complete) + '%';
 }
 
 // via http://stackoverflow.com/questions/105034

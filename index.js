@@ -122,6 +122,8 @@ const commands = {
                 if (!err) {
                     // Merge thumbs.json with cache
                     thumbs = Object.assign(cache[dir], JSON.parse(data.Body.toString()));
+                } else {
+                    thumbs = cache[dir]; 
                 }
 
                 // Persist
