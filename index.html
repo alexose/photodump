@@ -66,6 +66,53 @@ h1,p {
     color: #555;
 }
 
+.help {
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: 2px solid #555;
+    color: #555;
+    font-size: 25px;
+    font-weight: 800;
+    z-index: 2;
+}
+
+.help:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.curtain {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.55);
+}
+
+.modal {
+    max-height: 80%;
+    width: 600px;
+    padding: 100px;
+    background: #111;
+    color: #555;
+    border-radius: 30px;
+    font-size: 20px;
+}
+
 .thumb img {
     width: 100% !important;
     height: auto !important;

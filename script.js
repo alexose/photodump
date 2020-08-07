@@ -227,12 +227,44 @@ function welcome() {
                     Photodump is the fastest and easiest way to share photos with friends.
                 </p> 
                 <p>
-                    Drag and drop your photos, or <a href="#">click here to upload</a>
+                    Drag and drop your photos, or <a href="#">click here to upload</a>.
                 </p>
             </div>
         </div>
     `;
     element.insertAdjacentHTML('afterEnd', tmpl);
+}
+
+// Create help button
+function help() {
+    const button = document.createElement('button');
+    button.className = 'help';
+    button.onclick = e => {
+        showModal(e, `<div>halp</div>`);
+    }
+    button.insertAdjacentHTML('beforeEnd', '<div>?</div>');
+
+    element.after(button);
+}
+help();
+
+function showModal(e, html) {
+    e.stopPropagation();
+    const curtain = document.createElement('div');
+    curtain.className = 'curtain';
+    curtain.onclick = e => {
+        modal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.onclick = e => {
+        e.stopPropagation();
+    }
+    modal.insertAdjacentHTML('beforeEnd', html);
+    curtain.appendChild(modal);
+
+    element.after(curtain);
 }
 
 // via http://stackoverflow.com/questions/105034
