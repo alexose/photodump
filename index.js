@@ -81,14 +81,19 @@ const commands = {
         partials[dir][name].push(chunk);
         const length = partials[dir][name].length;
         if (length === total) {
-
-            persist({
+            const str = partials[dir][name].join('');
+            partials[dir][name] = [];
+            const buf = new Buffer(str, 'base64');
+            const params = {
                 Key: `${dir}/${name}.webp`,
+                Body: buf,
+                ContentEncoding: 'base64',
+                ContentType: 'image/webp',
+            };
 
-            }, ws, loc => {
+            persist(params, ws, loc => {
                 log('File added');
             });
-
         }
 
         ws.send(JSON.stringify({ command: 'progress', hash, name, complete: length / total * 100 }));
@@ -141,10 +146,8 @@ const commands = {
 
                 // Rapid-fire thumbnails off to the client
                 Object.keys(obj).forEach(key => {
-                    ws.send(JSON.stringify({
-                        command: 'list',
-                        data: obj[key]
-                    }));
+                    const data = Object.assign(obj[key], { complete: 100 });
+                    ws.send(JSON.stringify({ command: 'list', data }));
                 });
             }
         });
@@ -198,11 +201,6 @@ function list(prefix, cb) {
         }
         cb(data.Contents);
     })
-}
-
-// via http://stackoverflow.com/questions/105034
-function createuuid() {
-    return Math.random().toString(36).substring(2, 7) + Math.random().toString(36).substring(2, 7);
 }
 
 // via https://stackoverflow.com/questions/6850276

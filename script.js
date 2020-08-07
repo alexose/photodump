@@ -101,6 +101,7 @@ function chunkedUpload(file, name, cb) {
         if (chunk.size) {
             reader.readAsDataURL(chunk);
             reader.onloadend = () => {
+                console.log(reader.result.split(',')[1].length);
                 send(JSON.stringify({
                    command: 'upload_chunk',
                    name,
@@ -180,8 +181,13 @@ function display(data) {
     const img = document.getElementById(name);
     if (!img) {
         const container = document.createElement('div');
+        const dir = hash.split('#').join('');
+
         container.id = name;
         container.className = 'thumb';
+        container.onclick = e => {
+            window.location = `${aws_url}/${dir}/${name}.webp` 
+        };
 
         const shade = document.createElement('div');
         shade.className = 'shade';
