@@ -84,10 +84,11 @@ h1,p {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    position: absolute;
+    position: fixed;
     background: none;
     border: 2px solid #555;
     color: #555;
+    background: #000;
     font-size: 25px;
     font-weight: 800;
     z-index: 2;
@@ -98,11 +99,19 @@ h1,p {
   box-shadow: none;
 }
 
-button.help {
+button.help,
+button.upload {
     width: 35px;
     height: 35px;
     border-radius: 17px;
     top: 20px;
+}
+
+button.help {
+    right: 60px;
+}
+
+button.upload {
     right: 20px;
 }
 

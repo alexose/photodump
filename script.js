@@ -259,22 +259,24 @@ function welcome(url) {
     const el = document.createElement('div')
     el.className = el.id = 'welcome';
     el.innerHTML = tmpl;
-    el.onclick = e => {
-        // Trigger document upload screen
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.onchange = e => {
-            handleFiles(input.files);
-        };
-        input.click();
-    };
+    el.onclick = onUpload; 
 
     ['dragover','drop','dragleave'].forEach(d => { 
         el.addEventListener(d, e => handleDragDrop(d, e)); 
     });
 
     element.before(el);
+}
+        
+function onUpload(e) {
+    // Trigger document upload screen
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = e => {
+        handleFiles(input.files);
+    };
+    input.click();
 }
 
 function createButton(name, text, click) {
@@ -285,6 +287,7 @@ function createButton(name, text, click) {
     return button;
 }
 
+element.after(createButton('upload', '↑', onUpload));
 element.after(createButton('help', '?', onHelp));
 function onHelp(e) {
     const tmpl = `
