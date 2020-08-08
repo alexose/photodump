@@ -250,17 +250,18 @@ function welcome(url) {
     element.insertAdjacentHTML('afterEnd', tmpl);
 }
 
-// Create help button
-function help() {
+function createButton(name, text, click) {
     const button = document.createElement('button');
-    button.className = 'help';
-    button.onclick = e => {
-        showModal(e, `<div>halp</div>`);
-    }
-    button.insertAdjacentHTML('beforeEnd', '<div>?</div>');
-    element.after(button);
+    button.className = 'button ' + name; 
+    button.onclick = click;
+    button.insertAdjacentHTML('beforeEnd', `<div>${text}</div>`);
+    return button;
 }
-help();
+
+element.after(createButton('help', '?', onHelp));
+function onHelp(e) {
+    showModal(e, `<div>halp</div>`);
+}
 
 const modals = {}
 function createModal(name) {
@@ -287,6 +288,17 @@ function createModal(name) {
 createModal('main');
 createModal('images');
 
+// Add buttons to images modal
+[['previous', '«'], ['next', '»']].forEach(([name, symbol]) => {
+    modals.images.modal.after(createButton(name, symbol, (e) => {
+        const item = modals.images.current[name + 'Sibling'];
+        if (item) {
+            const name = item.id.split('full-').join('');
+            showImage(e, name) 
+        }
+    }));
+});
+
 function showModal(e, html, name='main') {
     e.stopPropagation();
     const o = modals[name];
@@ -298,6 +310,7 @@ function showModal(e, html, name='main') {
 }
 
 function showImage(e, name) {
+    e.stopPropagation();
     const o = modals.images;
     if (o.current) {
         o.current.style.display = 'none';

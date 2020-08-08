@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta charset="utf-8">
 <style>
 
 @media screen and (max-width: 300px) /* Mobile */ {
@@ -66,7 +67,7 @@ h1,p {
     color: #555;
 }
 
-.help {
+.button {
     width: 50px;
     height: 50px;
     border-radius: 25px;
@@ -75,8 +76,6 @@ h1,p {
     justify-content: center;
     cursor: pointer;
     position: absolute;
-    top: 20px;
-    right: 20px;
     background: none;
     border: 2px solid #555;
     color: #555;
@@ -85,9 +84,28 @@ h1,p {
     z-index: 2;
 }
 
-.help:focus {
+.button:focus {
   outline: none;
   box-shadow: none;
+}
+
+.help {
+    width: 35px;
+    height: 35px;
+    border-radius: 17px;
+    top: 20px;
+    right: 20px;
+}
+
+.previous, .next {
+    top: 45%;
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+    font-size: 40px;
+}
+.next {
+    right: 20px;
 }
 
 .curtain {
