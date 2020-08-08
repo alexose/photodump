@@ -1,6 +1,5 @@
 // Photodump2
 // Blazingly fast, dependency-free photo sharing that respects your privacy.
-
 (() => {
 
 let current;
@@ -10,7 +9,14 @@ const aws_url = "https://photodump-aws.s3.amazonaws.com";
 const hash = document.location.hash || createuuid();
 
 // Create Websocket
-const ws = new WebSocket();
+var loc = window.location, uri;
+if (loc.protocol === "https:") {
+    uri = "wss:";
+} else {
+    uri = "ws:";
+}
+uri += "//" + loc.host;
+const ws = new WebSocket(uri);
 
 const commands = {
     list: ({ data }) => display(data),

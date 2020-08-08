@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Photodump is a simple, realtime photo sharing application tuned to an unreasonable degree of efficiency.",
   "main": "script.js",
+  "engines": {
+    "node": "12.x"
+  },
   "directories": {
     "lib": "lib"
   },
