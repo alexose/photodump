@@ -203,21 +203,12 @@ function display(data) {
         image.src = src;
         image.style.opacity = 0;
             
-        // Append image to DOM in order to allow preload
-        if (complete === 100) {
-            const full = document.createElement('img');
-            full.id = 'full-' + name;
-            full.src = `${aws_url}/${dir}/${name}.webp`;
-            full.className = 'full';
-            full.style.display = 'none';
-            modals.images.modal.appendChild(full);
-            container.onclick = e => showImage(e, name);; 
-        } else {
-            container.onclick = () => {};
-        }
-        
         container.appendChild(image);
         element.appendChild(container);
+        
+        if (complete === 100) {
+            appendFull(name);
+        }
        
         setTimeout(() => {
             image.style.opacity = 1;
@@ -225,10 +216,29 @@ function display(data) {
     }
 }
 
+// Append image to DOM in order to allow preload
+function appendFull(name) {
+    const full = document.createElement('img');
+    const dir = hash.split('#').join('');;
+    full.id = 'full-' + name;
+    full.src = `${aws_url}/${dir}/${name}.webp`;
+    full.className = 'full';
+    full.style.display = 'none';
+    modals.images.modal.appendChild(full);
+
+    const container = document.getElementById(name);
+    if (container) {
+        container.onclick = e => showImage(e, name);; 
+    }
+}
+
 // Handle progress
-function progress(data) {
-    const thumb = document.getElementById(data.name);
-    thumb.children[0].style.width = (100 - data.complete) + '%';
+function progress({ name, complete }) {
+    const thumb = document.getElementById(name);
+    thumb.children[0].style.width = (100 - complete) + '%';
+    if (complete === 100) {
+        setTimeout(() => appendFull(name), 2000);
+    }
 }
 
 // Create a friendly and attractive welcome screen
@@ -259,6 +269,10 @@ function welcome(url) {
         };
         input.click();
     };
+
+    ['dragover','drop','dragleave'].forEach(d => { 
+        el.addEventListener(d, e => handleDragDrop(d, e)); 
+    });
 
     element.before(el);
 }
