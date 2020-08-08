@@ -126,7 +126,6 @@ function chunkedUpload(str, name, cb) {
 
 // Convert image into webp format
 // TODO: would be cool to do this in a web worker
-// TODO: how to handle massively huge images?
 function convert(d, w, h, cb) {
 
     // Draw image to offscreen canvas
@@ -148,10 +147,7 @@ function convert(d, w, h, cb) {
 }
 
 // Upload to server 
-// TODO: queue
 function upload(type, file, cb) {
-
-    // TODO: send blob instead of string
     const str = JSON.stringify({ command: 'upload_' + type, hash, file });
     send(str, function(remaining){
         if (remaining === 0){
@@ -214,14 +210,8 @@ function display(data) {
             full.src = `${aws_url}/${dir}/${name}.webp`;
             full.className = 'full';
             full.style.display = 'none';
-            document.body.appendChild(full);
-        
-            container.onclick = e => {
-                const open = document.getElementById('full-' + current);
-                if (open) open.style.display = 'none';
-                current = name;
-                full.style.display = 'block'; 
-            };
+            modals.images.modal.appendChild(full);
+            container.onclick = e => showImage(e, name);; 
         } else {
             container.onclick = () => {};
         }
@@ -272,29 +262,50 @@ function help() {
 }
 help();
 
-function showModal(e, html) {
+const modals = {}
+function createModal(name) {
+    const o = modals[name] = {};
+    o.curtain = document.createElement('div');
+    o.curtain.className = 'curtain';
+    o.curtain.style.display = 'none';
+    o.curtain.onclick = e => {
+        o.curtain.style.display = 'none';
+    }
+
+    o.modal = document.createElement('div');
+    o.modal.className = 'modal ' + name;
+    
+    if (name !== 'images') {
+        o.modal.onclick = e => {
+            e.stopPropagation();
+        }
+    }
+    
+    o.curtain.appendChild(o.modal);
+    element.after(o.curtain);
+}
+createModal('main');
+createModal('images');
+
+function showModal(e, html, name='main') {
     e.stopPropagation();
-    const curtain = document.createElement('div');
-    curtain.className = 'curtain';
-    curtain.onclick = e => {
-        curtain.remove();
+    const o = modals[name];
+    if (html) {
+        o.modal.innerHTML = '';
+        o.modal.insertAdjacentHTML('beforeEnd', html);
     }
-
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.onclick = e => {
-        e.stopPropagation();
-    }
-    modal.insertAdjacentHTML('beforeEnd', html);
-    curtain.appendChild(modal);
-
-    element.after(curtain);
+    o.curtain.style.display = 'block';
 }
 
 function showImage(e, name) {
-    e.stopPropagation();
-    const full = document.getElementById('full-' + name);
-    full.style.display = 'block';
+    const o = modals.images;
+    if (o.current) {
+        o.current.style.display = 'none';
+    }
+    const image = document.getElementById('full-' + name);
+    image.style.display = 'block';
+    o.curtain.style.display = 'block';
+    o.current = image; 
 }
 
 // via https://stackoverflow.com/questions/1655769 

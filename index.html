@@ -106,8 +106,6 @@ h1,p {
 img.full {
     max-height: 100%;
     max-width: 100%;
-    position: absolute;
-    z-index: 3;
 }
 
 .modal {
@@ -119,9 +117,13 @@ img.full {
     font-size: 20px;
 }
 
-.modal img.fullsize {
-    max-width: 100%;
-    max-height: 80%;
+.modal.images {
+    height: 100%;
+    width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .thumb img {
