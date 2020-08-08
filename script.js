@@ -237,7 +237,7 @@ function progress({ name, complete }) {
     const thumb = document.getElementById(name);
     thumb.children[0].style.width = (100 - complete) + '%';
     if (complete === 100) {
-        setTimeout(() => appendFull(name), 2000);
+        appendFull(name);
     }
 }
 
