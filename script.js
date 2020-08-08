@@ -6,7 +6,8 @@ let current;
 const aws_url = "https://photodump-aws.s3.amazonaws.com";
 
 // Handle hash
-const hash = document.location.hash || createuuid();
+let hash = document.location.hash;
+window.addEventListener('hashchange', () => hash = document.location.hash, false); 
 
 // Create Websocket
 var loc = window.location, uri;
@@ -22,7 +23,7 @@ const commands = {
     list: ({ data }) => display(data),
     add: ({ data }) => display(data),
     progress: (data) => progress(data),
-    welcome: () => welcome(),
+    welcome: ({ url }) => welcome(url),
 }
 
 // Get all images in dump
@@ -241,7 +242,8 @@ function progress(data) {
 }
 
 // Create a friendly and attractive welcome screen
-function welcome() {
+function welcome(url) {
+    window.location.hash = '#' + url;
     const tmpl = `
         <div class="welcome" id="welcome">
             <div class="welcome-inner">
@@ -293,13 +295,6 @@ function showImage(e, name) {
     e.stopPropagation();
     const full = document.getElementById('full-' + name);
     full.style.display = 'block';
-}
-
-// via http://stackoverflow.com/questions/105034
-function createuuid() {
-    const hash = Math.random().toString(36).substring(2, 7) + Math.random().toString(36).substring(2, 7);
-    document.location.hash = hash;
-    return hash;
 }
 
 // via https://stackoverflow.com/questions/1655769 
