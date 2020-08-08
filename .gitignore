@@ -1,2 +1,4 @@
+.gcloudignore
+app.yaml
 config.js
 node_modules

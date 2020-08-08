@@ -287,7 +287,33 @@ function createButton(name, text, click) {
 
 element.after(createButton('help', '?', onHelp));
 function onHelp(e) {
-    showModal(e, `<div>halp</div>`);
+    const tmpl = `
+        <div class="help-screen">
+            <p>
+                Photodump is an experimental photo sharing service built for speed and ease-of-use.  It's intended for groups
+                of friends to share images with each other without needing to download annoying apps or needing to 'sign in'.
+            </p>
+            <p>
+                To get started, just click the arrow in the upper right corner.  Choose as many images as you like, then
+                press "OK".  You can also drag and drop images, if you like.
+            </p>
+            <p>
+                Photodump is designed to protect your privacy.  All metadata (including the date, location, and filename) 
+                is stripped from the image before it's uploaded, and search engines are not permitted to crawl any submitted 
+                data.  Individual Photodumps are automatically destroyed 14 days after the first image is uploaded.  
+                However, it is important to remember that these images are publically availble by default.  Therefore, 
+                we recommend you take care when posting images that include identifiable features. 
+            </p>
+            <p>
+                At this point, we do not offer any promises as to data availability or longevity.  Things might break,
+                disappear, or otherwise stop working without notice.
+            </p>
+            <p>
+                (c) 2020 Alexander Ose
+            </p>
+        </div>
+    `;
+    showModal(e, tmpl);
 }
 
 const modals = {}
@@ -302,12 +328,6 @@ function createModal(name) {
 
     o.modal = document.createElement('div');
     o.modal.className = 'modal ' + name;
-    
-    if (name !== 'images') {
-        o.modal.onclick = e => {
-            e.stopPropagation();
-        }
-    }
     
     o.curtain.appendChild(o.modal);
     element.after(o.curtain);

@@ -47,7 +47,7 @@ h1,p {
     justify-content: center;
     align-items: center;
     position: absolute;
-    z-index: 3;
+    z-index: 2;
     width: 100%;
     height: 100%;
     cursor: pointer;
@@ -72,6 +72,10 @@ h1,p {
     color: #555;
 }
 
+.help-screen {
+    max-width: 800px;
+}
+
 .button {
     width: 50px;
     height: 50px;
@@ -94,7 +98,7 @@ h1,p {
   box-shadow: none;
 }
 
-.help {
+button.help {
     width: 35px;
     height: 35px;
     border-radius: 17px;
@@ -102,14 +106,15 @@ h1,p {
     right: 20px;
 }
 
-.previous, .next {
+button.previous, button.next {
     top: 45%;
     width: 80px;
     height: 80px;
     border-radius: 40px;
     font-size: 40px;
 }
-.next {
+
+button.next {
     right: 20px;
 }
 
@@ -132,12 +137,15 @@ img.full {
 }
 
 .modal {
-    max-height: 80%;
-    width: 600px;
+    width: 100%;
+    height: 100%;
     background: #111;
     color: #555;
     border-radius: 30px;
     font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .modal.images {

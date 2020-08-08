@@ -1,0 +1,6 @@
+# Robots are not allowed to crawl any URL on this domain except for the front page.
+# deal_with_it.gif
+
+User-agent: *
+Allow: /$
+Disallow: /
