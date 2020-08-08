@@ -234,20 +234,33 @@ function progress(data) {
 // Create a friendly and attractive welcome screen
 function welcome(url) {
     window.location.hash = '#' + url;
+
     const tmpl = `
-        <div class="welcome" id="welcome">
-            <div class="welcome-inner">
-                <h1>Welcome to Photodump!</h1>
-                <p>
-                    Photodump is the fastest and easiest way to share photos with friends.
-                </p> 
-                <p>
-                    Drag and drop your photos, or <a href="#">click here to upload</a>.
-                </p>
-            </div>
+        <div class="welcome-inner">
+            <h1>Welcome to Photodump!</h1>
+            <p>
+                Photodump is the fastest and easiest way to share photos with friends.
+            </p> 
+            <p>
+                Drag and drop your photos, or <a href="#">click here to upload</a>.
+            </p>
         </div>
     `;
-    element.insertAdjacentHTML('afterEnd', tmpl);
+    const el = document.createElement('div')
+    el.className = el.id = 'welcome';
+    el.innerHTML = tmpl;
+    el.onclick = e => {
+        // Trigger document upload screen
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.onchange = e => {
+            handleFiles(input.files);
+        };
+        input.click();
+    };
+
+    element.before(el);
 }
 
 function createButton(name, text, click) {
