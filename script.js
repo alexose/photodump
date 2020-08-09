@@ -312,7 +312,7 @@ function onHelp(e) {
                 disappear, or otherwise stop working without notice.
             </p>
             <p>
-                (c) 2020 Alexander Ose
+                (c) 2020 Photodump Enterprises, LLC 
             </p>
         </div>
     `;
