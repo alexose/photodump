@@ -1,13 +1,30 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 
-@media screen and (max-width: 300px) /* Mobile */ {
-  @viewport {
-      width: device-width;
-      zoom: 2;
-  }
+@media screen and (max-width: 400px) /* Mobile */ {
+    @viewport {
+        width: device-width;
+    }
+    
+    body > #application {
+        -webkit-column-count: 3;
+        -webkit-column-gap:   0px;
+        -moz-column-count:    3;
+        -moz-column-gap:      0px;
+        column-count:         3;
+        column-gap:           0px;
+    }
+
+    body button.previous,
+    body button.next {
+        top: auto;
+        bottom: 20px;
+    }
+    body button.next { right: 5px; }
+    body button.previous { left: 5px; }
 }
 
 body {
@@ -88,10 +105,11 @@ h1,p {
     background: none;
     border: 2px solid #555;
     color: #555;
-    background: #000;
+    background: #222;
     font-size: 25px;
     font-weight: 800;
     z-index: 2;
+    -webkit-backface-visibility: hidden;
 }
 
 .button:focus {
