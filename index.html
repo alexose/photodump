@@ -8,14 +8,9 @@
     @viewport {
         width: device-width;
     }
-    
-    body > #application {
-        -webkit-column-count: 3;
-        -webkit-column-gap:   0px;
-        -moz-column-count:    3;
-        -moz-column-gap:      0px;
-        column-count:         3;
-        column-gap:           0px;
+
+    body #application {
+        column-count: 2;
     }
 
     body button.previous,
@@ -40,21 +35,9 @@ h1,p {
 }
 
 #application {
-    position: absolute;
-    top:0;right:0;bottom:0;left:0;
     display:block;
-    width:100%;
-    height:100%;
     z-index:1;
-    
-    line-height: 0;
-   
-    -webkit-column-count: 5;
-    -webkit-column-gap:   0px;
-    -moz-column-count:    5;
-    -moz-column-gap:      0px;
-    column-count:         5;
-    column-gap:           0px;  
+    column-count: 5;
 }
 
 .welcome {
