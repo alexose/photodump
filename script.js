@@ -43,7 +43,8 @@ const canvas = document.createElement('canvas');
 
 // Handle drag and drop
 ['dragover','drop','dragleave'].forEach(d => { 
-    element.addEventListener(d, e => handleDragDrop(d, e)); 
+    element.addEventListener(d, e => handleDragDrop(d, e));
+    document.body.addEventListener(d, e => handleDragDrop(d, e));
 });
 
 function handleDragDrop(name, e) {
