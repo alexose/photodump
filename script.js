@@ -5,9 +5,42 @@
 let current;
 const aws_url = "https://photodump-aws.s3.amazonaws.com";
 
-// Handle hash
-let hash = document.location.hash;
-window.addEventListener('hashchange', () => hash = document.location.hash, false); 
+const availableParams = {
+    light: () => {
+        addCss('body { background-color: white; }');
+        addCss('.curtain { background-color: rgba(255,255,255,0.9); }');
+        addCss('.modal { background: none }');
+        addCss('.button { background: none; border: none; }');
+    },
+    silent: () => {
+        addCss('button.help, button.upload { display: none; }');
+    },
+    horizontal: value => {
+
+    }
+}
+
+function addCss(str) {
+    const sheet = window.document.styleSheets[0];
+    sheet.insertRule(str, sheet.cssRules.length);
+}
+
+window.addEventListener('hashchange', updateParams);
+function updateParams() {
+    const arr = document.location.hash.split('!');
+    hash = arr.shift();
+    params = arr.join('!'); 
+
+    // Handle params
+    arr.forEach(d => {
+        const [key, value] = d.split(':');
+        
+        if (availableParams[key]) {
+            availableParams[key](value);
+        }
+    });
+}
+updateParams();
 
 // Create Websocket
 var loc = window.location, uri;
@@ -244,7 +277,8 @@ function progress({ name, complete }) {
 
 // Create a friendly and attractive welcome screen
 function welcome(url) {
-    window.location.hash = '#' + url;
+    const str = params ? url + '!' + params : url;
+    window.location.hash = '#' + str; 
 
     const tmpl = `
         <div class="welcome-inner">
