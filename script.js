@@ -12,6 +12,9 @@ const availableParams = {
         addCss('.modal { background: none }');
         addCss('.button { background: none; border: none; }');
     },
+    dark: () => {
+        addCss('body { background-color: #222; }');
+    },
     silent: () => {
         addCss('button.help, button.upload { display: none; }');
     },
