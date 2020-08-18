@@ -60,6 +60,7 @@ const commands = {
     add: ({ data }) => display(data),
     progress: (data) => progress(data),
     welcome: ({ url }) => welcome(url),
+    removed: ({ name }) => removed(name),
 }
 
 // Get all images in dump
@@ -82,6 +83,16 @@ const canvas = document.createElement('canvas');
     element.addEventListener(d, e => handleDragDrop(d, e));
     document.body.addEventListener(d, e => handleDragDrop(d, e));
 });
+
+// Handle keystrokes
+document.onkeydown = e => {
+    if (e.keyCode === 8) {
+        if (modals.images.current) {
+            const name = modals.images.current.id.split('-')[1];
+            send(JSON.stringify({ command: 'remove', name, hash }));
+        }
+    }
+}
 
 function handleDragDrop(name, e) {
     e.preventDefault();
@@ -212,6 +223,21 @@ function send(str, callback) {
                 clearInterval(interval);
             }
         }, 100);
+    }
+}
+
+function removed(name) {
+    const thumb = document.getElementById(name);
+    if (thumb) thumb.remove();
+    const full = document.getElementById('full-' + name);
+    if (full) full.remove();
+    
+    if (document.querySelectorAll('.thumb').length === 0) {
+        welcome(hash.split('#').join(''));
+    }
+    
+    if (modals.images.current) {
+        modals.images.curtain.click();
     }
 }
 
@@ -365,6 +391,7 @@ function createModal(name) {
     o.curtain.style.display = 'none';
     o.curtain.onclick = e => {
         o.curtain.style.display = 'none';
+        o.current = null;
     }
 
     o.modal = document.createElement('div');

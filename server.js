@@ -168,6 +168,44 @@ const commands = {
                 });
             }
         });
+    },
+
+    remove: ({ hash, name }, ws) => {
+        const dir = strip(hash);
+        s3.deleteObject({
+            Bucket: config.bucket,
+            Key: `${dir}/${name}.webp`,
+        }, (err, data) => {
+            if (!err) {
+                
+                // Remove from thumbs.json
+                getThumbs(dir, thumbs => {
+                    delete thumbs[name];
+                    if (Object.keys(thumbs).length === 0) {
+                        
+                        // Remove thumbs.json
+                        s3.deleteObject({
+                            Bucket: config.bucket,
+                            Key: `${dir}/thumbs.json`,
+                        }, (err, data) => {
+                            if (!err) {
+                                console.log(`Removed ${dir}/thumbs.json`);
+                            }
+                        });
+                    } else {
+                        
+                        // Save updated thumbs.json
+                        persist({
+                            Key: `${dir}/thumbs.json`, 
+                            Body: JSON.stringify(cache[dir]),
+                            ContentType: 'text/json',
+                        }, ws);
+                    }
+                    
+                    ws.send(JSON.stringify({ command: 'removed', name }))
+                })
+            }
+        });
     }
 }
 
