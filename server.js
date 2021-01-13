@@ -6,7 +6,7 @@ const AWS = require('aws-sdk');
 const config = require('./config');
 
 const host = 'localhost';
-const port = process.env.PORT || 8082;
+const port = process.env.PORT || 3000;
 const html = fs.readFileSync('./index.html');
 const script = fs.readFileSync('./script.js');
 const robots = fs.readFileSync('./robots.txt');
@@ -25,7 +25,7 @@ const partials = {};
 // Create HTTP server
 // Note that most of the heavy lifting happens via websocket, not here
 const server = http.createServer(function ({url}, res) {
-    switch(url){ 
+    switch(url){
         case '/':
             respond(html, 'text/html');
             break;
@@ -77,7 +77,7 @@ const commands = {
     upload_chunk: ({ hash, name, total, chunk }, ws) => {
         const dir = strip(hash);
 
-        if (!partials[dir]) partials[dir] = {}; 
+        if (!partials[dir]) partials[dir] = {};
         if (!partials[dir][name]) partials[dir][name] = [];
 
         // Casually assuming these can't come in out of order...
@@ -99,20 +99,20 @@ const commands = {
                 ws.send(JSON.stringify({ command: 'progress', hash, name, complete: 100 }));
             });
         }
-    
+
         const complete = Math.min(length/total * 100, 99);
         ws.send(JSON.stringify({ command: 'progress', hash, name, complete }));
     },
 
     upload_thumbnail: ({ hash, file }, ws) => {
-        const dir = strip(hash); 
+        const dir = strip(hash);
         const data = Object.assign({ complete: 0 }, file);
 
         ws.send(JSON.stringify({ command: 'add', data }));
 
         // Make sure we're uploading to a valid directory
         getThumbs(dir, one)
-    
+
         function one(thumbs) {
             thumbs[file.name] = file;
 
@@ -122,7 +122,7 @@ const commands = {
         }
 
         function two(thumbs) {
-            s3.getObject({ 
+            s3.getObject({
                 Bucket: config.bucket,
                 Key: `${dir}/thumbs.json`,
             }, (err, data) => {
@@ -135,7 +135,7 @@ const commands = {
 
                 // Persist
                 const params = {
-                    Key: `${dir}/thumbs.json`, 
+                    Key: `${dir}/thumbs.json`,
                     Body: JSON.stringify(thumbs),
                     ContentType: 'text/json',
                 };
@@ -145,7 +145,7 @@ const commands = {
     },
 
     list: ({ hash }, ws) => {
-        s3.getObject({ 
+        s3.getObject({
             Bucket: config.bucket,
             Key: `${strip(hash)}/thumbs.json`,
         }, (err, data) => {
@@ -154,9 +154,9 @@ const commands = {
                 const dir = createUUID();
                 cache[dir] = {};
                 ws.send(JSON.stringify({ command: 'welcome', url: dir }));
-            } else { 
+            } else {
                 const obj = JSON.parse(data.Body.toString());
-                
+
                 if (Object.keys(obj).length > 1000) {
                     return;
                 }
@@ -177,12 +177,12 @@ const commands = {
             Key: `${dir}/${name}.webp`,
         }, (err, data) => {
             if (!err) {
-                
+
                 // Remove from thumbs.json
                 getThumbs(dir, thumbs => {
                     delete thumbs[name];
                     if (Object.keys(thumbs).length === 0) {
-                        
+
                         // Remove thumbs.json
                         s3.deleteObject({
                             Bucket: config.bucket,
@@ -193,15 +193,15 @@ const commands = {
                             }
                         });
                     } else {
-                        
+
                         // Save updated thumbs.json
                         persist({
-                            Key: `${dir}/thumbs.json`, 
+                            Key: `${dir}/thumbs.json`,
                             Body: JSON.stringify(cache[dir]),
                             ContentType: 'text/json',
                         }, ws);
                     }
-                    
+
                     ws.send(JSON.stringify({ command: 'removed', name }))
                 })
             }
@@ -213,7 +213,7 @@ wss.on('connection', ws => {
     ws.on('message', str => {
         const obj = JSON.parse(str);
         const { command } = obj;
-        if (commands[command]) { 
+        if (commands[command]) {
             commands[command](obj, ws);
         }
     });
@@ -231,15 +231,15 @@ function getThumbs(dir, cb) {
     } else {
 
         // Next, let's look in S3
-        s3.getObject({ 
+        s3.getObject({
             Bucket: config.bucket,
             Key: `${dir}/thumbs.json`,
         }, (err, data) => {
             if (err) {
-                log('Error: Could not find directory ' + dir); 
+                log('Error: Could not find directory ' + dir);
             } else {
-                const thumbs = JSON.parse(data.Body.toString()); 
-                cache[dir] = thumbs; 
+                const thumbs = JSON.parse(data.Body.toString());
+                cache[dir] = thumbs;
                 cb(thumbs);
             }
         });
@@ -248,7 +248,7 @@ function getThumbs(dir, cb) {
 
 // Persist data in S3
 function persist(obj, ws, cb) {
-    
+
     const defaults = {
         Bucket: config.bucket,
         ACL:'public-read', // TODO: no
@@ -270,7 +270,7 @@ function persist(obj, ws, cb) {
 
 // Get all image URLs in a specified bucket
 function list(prefix, cb) {
-    const params = { 
+    const params = {
         Bucket: config.bucket,
         Prefix: prefix,
     };
@@ -303,6 +303,6 @@ function dataURItoBlob(dataURI) {
     for (var i = 0; i < byteString.length; i++) {
         ia[i] = byteString.charCodeAt(i);
     }
-    
+
     return new Blob([ab], {type: mimeString});
 }

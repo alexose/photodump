@@ -353,6 +353,8 @@ function createButton(name, text, click) {
 
 element.after(createButton('upload', '↑', onUpload));
 element.after(createButton('help', '?', onHelp));
+element.after(createButton('config', '*', onConfig));
+
 function onHelp(e) {
     const tmpl = `
         <div class="help-screen">
@@ -383,6 +385,13 @@ function onHelp(e) {
     showModal(e, tmpl);
 }
 
+function onConfig(e) {
+    const tmpl = `
+        <p>config</p>
+    `
+    showModal(e, tmpl, config);
+}
+
 const modals = {}
 function createModal(name) {
     const o = modals[name] = {};
@@ -402,6 +411,7 @@ function createModal(name) {
 }
 createModal('main');
 createModal('images');
+createModal('config');
 
 // Add buttons to images modal
 [['previous', '«'], ['next', '»']].forEach(([name, symbol]) => {
