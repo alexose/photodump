@@ -32,12 +32,12 @@ window.addEventListener('hashchange', updateParams);
 function updateParams() {
     const arr = document.location.hash.split('!');
     hash = arr.shift();
-    params = arr.join('!'); 
+    params = arr.join('!');
 
     // Handle params
     arr.forEach(d => {
         const [key, value] = d.split(':');
-        
+
         if (availableParams[key]) {
             availableParams[key](value);
         }
@@ -79,7 +79,7 @@ const element = document.getElementById('application');
 const canvas = document.createElement('canvas');
 
 // Handle drag and drop
-['dragover','drop','dragleave'].forEach(d => { 
+['dragover','drop','dragleave'].forEach(d => {
     element.addEventListener(d, e => handleDragDrop(d, e));
     document.body.addEventListener(d, e => handleDragDrop(d, e));
 });
@@ -109,17 +109,17 @@ function handleFiles(files) {
     arr.forEach((d, i) => {
         convert(d, 450, 450, data => {
             thumbnails[i] = {
-                name: md5(d.name + d.lastModified + data), 
+                name: md5(d.name + d.lastModified + data),
                 src: data
             };
             if (Object.keys(thumbnails).length == files.length) {
 
                 // Rapid-fire upload thumbnails to the server
                 const arr = Object.keys(thumbnails);
-                
+
                 (function iterate(i) {
                     if (thumbnails[i]) {
-                        upload('thumbnail', thumbnails[i], () => iterate(i+1)); 
+                        upload('thumbnail', thumbnails[i], () => iterate(i+1));
                     } else {
                         next();
                     }
@@ -182,7 +182,7 @@ function convert(d, w, h, cb) {
     img.onload = function() {
 
         // Resize as necessary
-        let ratio = w && h ? Math.min(w / img.width, h / img.height) : 1; 
+        let ratio = w && h ? Math.min(w / img.width, h / img.height) : 1;
 
         canvas.width = img.width * ratio;
         canvas.height = img.height * ratio;
@@ -194,7 +194,7 @@ function convert(d, w, h, cb) {
     img.src = URL.createObjectURL(d);
 }
 
-// Upload to server 
+// Upload to server
 function upload(type, file, cb) {
     const str = JSON.stringify({ command: 'upload_' + type, hash, file });
     send(str, function(remaining){
@@ -231,11 +231,11 @@ function removed(name) {
     if (thumb) thumb.remove();
     const full = document.getElementById('full-' + name);
     if (full) full.remove();
-    
+
     if (document.querySelectorAll('.thumb').length === 0) {
         welcome(hash.split('#').join(''));
     }
-    
+
     if (modals.images.current) {
         modals.images.curtain.click();
     }
@@ -243,12 +243,12 @@ function removed(name) {
 
 function display(data) {
     const { name, url, complete, src } = data;
-    
+
     const welcome = document.getElementById('welcome');
     if (welcome) {
         welcome.remove();
     }
-   
+
    const img = document.getElementById(name);
     if (!img) {
         const container = document.createElement('div');
@@ -261,18 +261,18 @@ function display(data) {
         shade.className = 'shade';
         shade.style.width = (100 - complete) + '%';
         container.appendChild(shade);
-        
+
         const image = document.createElement('img');
         image.src = src;
         image.style.opacity = 0;
-            
+
         container.appendChild(image);
         element.appendChild(container);
-        
+
         if (complete === 100) {
             appendFull(name);
         }
-       
+
         setTimeout(() => {
             image.style.opacity = 1;
         }, 10);
@@ -291,7 +291,7 @@ function appendFull(name) {
 
     const container = document.getElementById(name);
     if (container) {
-        container.onclick = e => showImage(e, name);; 
+        container.onclick = e => showImage(e, name);;
     }
 }
 
@@ -307,14 +307,14 @@ function progress({ name, complete }) {
 // Create a friendly and attractive welcome screen
 function welcome(url) {
     const str = params ? url + '!' + params : url;
-    window.location.hash = '#' + str; 
+    window.location.hash = '#' + str;
 
     const tmpl = `
         <div class="welcome-inner">
             <h1>Welcome to Photodump!</h1>
             <p>
                 Photodump is the fastest and easiest way to share photos with friends.
-            </p> 
+            </p>
             <p>
                 Drag and drop your photos, or <a href="#">click here to upload</a>.
             </p>
@@ -323,16 +323,18 @@ function welcome(url) {
     const el = document.createElement('div')
     el.className = el.id = 'welcome';
     el.innerHTML = tmpl;
-    el.onclick = onUpload; 
+    el.onclick = onUpload;
 
-    ['dragover','drop','dragleave'].forEach(d => { 
-        el.addEventListener(d, e => handleDragDrop(d, e)); 
+    ['dragover','drop','dragleave'].forEach(d => {
+        el.addEventListener(d, e => handleDragDrop(d, e));
     });
 
     element.before(el);
 }
-        
+
 function onUpload(e) {
+    e.preventDefault();
+    e.stopPropagation();
     // Trigger document upload screen
     const input = document.createElement('input');
     input.type = 'file';
@@ -345,7 +347,7 @@ function onUpload(e) {
 
 function createButton(name, text, click) {
     const button = document.createElement('button');
-    button.className = 'button ' + name; 
+    button.className = 'button ' + name;
     button.onclick = click;
     button.insertAdjacentHTML('beforeEnd', `<div>${text}</div>`);
     return button;
@@ -367,18 +369,18 @@ function onHelp(e) {
                 press "OK".  You can also drag and drop images, if you like.
             </p>
             <p>
-                Photodump is designed to protect your privacy.  All metadata (including the date, location, and filename) 
-                is stripped from the image before it's uploaded, and search engines are not permitted to crawl any submitted 
-                data.  Individual Photodumps are automatically destroyed 14 days after the first image is uploaded.  
-                However, it is important to remember that these images are publically availble by default.  Therefore, 
-                we recommend you take care when posting images that include identifiable features. 
+                Photodump is designed to protect your privacy.  All metadata (including the date, location, and filename)
+                is stripped from the image before it's uploaded, and search engines are not permitted to crawl any submitted
+                data.  Individual Photodumps are automatically destroyed 14 days after the first image is uploaded.
+                However, it is important to remember that these images are publically availble by default.  Therefore,
+                we recommend you take care when posting images that include identifiable features.
             </p>
             <p>
                 At this point, we do not offer any promises as to data availability or longevity.  Things might break,
                 disappear, or otherwise stop working without notice.
             </p>
             <p>
-                (c) 2020 Photodump Enterprises, LLC 
+                (c) 2020 Photodump Enterprises, LLC
             </p>
         </div>
     `;
@@ -405,7 +407,7 @@ function createModal(name) {
 
     o.modal = document.createElement('div');
     o.modal.className = 'modal ' + name;
-    
+
     o.curtain.appendChild(o.modal);
     element.after(o.curtain);
 }
@@ -419,7 +421,7 @@ createModal('config');
         const item = modals.images.current[name + 'Sibling'];
         if (item) {
             const name = item.id.split('full-').join('');
-            showImage(e, name) 
+            showImage(e, name)
         }
     }));
 });
@@ -443,10 +445,10 @@ function showImage(e, name) {
     const image = document.getElementById('full-' + name);
     image.style.display = 'block';
     o.curtain.style.display = 'block';
-    o.current = image; 
+    o.current = image;
 }
 
-// via https://stackoverflow.com/questions/1655769 
+// via https://stackoverflow.com/questions/1655769
 function md5(inputString) {
     var hc="0123456789abcdef";
     function rh(n) {var j,s="";for(j=0;j<=3;j++) s+=hc.charAt((n>>(j*8+4))&0x0F)+hc.charAt((n>>(j*8))&0x0F);return s;}
