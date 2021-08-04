@@ -3,7 +3,21 @@ const fs = require("fs");
 const ws = require("ws");
 const AWS = require("aws-sdk");
 
-const config = require("./config");
+let config = {};
+try {
+    config = require("./config");
+} catch (e) {
+    console.log("Could not load config.  Attempting to proceed with environment variables...");
+    ["accessKeyId", "secretAccessKey", "bucket"].forEach(key => {
+        const str = process.env[key];
+        if (!str) {
+            console.error("Environment variables missing.");
+            process.exit(1);
+        } else {
+            config[key] = str;
+        }
+    });
+}
 
 const host = "localhost";
 const port = process.env.PORT || 3000;
